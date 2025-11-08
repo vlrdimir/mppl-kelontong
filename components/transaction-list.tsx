@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Pagination } from "@/components/ui/pagination"
+import { EditTransactionDialog } from "@/components/edit-transaction-dialog"
 import { usePaginationStore } from "@/lib/store/pagination-store"
 import type { Transaction } from "@/lib/types"
 
@@ -80,6 +81,7 @@ export function TransactionList({ transactions }: TransactionListProps) {
                     <TableHead>Dibayar</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Catatan</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -99,6 +101,9 @@ export function TransactionList({ transactions }: TransactionListProps) {
                       <TableCell className="font-medium">{formatCurrency(transaction.paidAmount)}</TableCell>
                       <TableCell>{getStatusBadge(transaction.paymentStatus)}</TableCell>
                       <TableCell className="max-w-xs truncate">{transaction.notes || "-"}</TableCell>
+                      <TableCell className="text-right">
+                        <EditTransactionDialog transaction={transaction} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

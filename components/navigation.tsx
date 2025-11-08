@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, ShoppingCart, Package, CreditCard } from "lucide-react"
+import { LayoutDashboard, ShoppingCart, Package, CreditCard, Users } from "lucide-react"
 
 export function Navigation() {
   const pathname = usePathname()
@@ -23,6 +23,11 @@ export function Navigation() {
       href: "/products",
       label: "Produk",
       icon: Package,
+    },
+    {
+      href: "/customers",
+      label: "Pelanggan",
+      icon: Users,
     },
     {
       href: "/debts",

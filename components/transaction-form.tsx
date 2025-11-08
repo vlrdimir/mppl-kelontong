@@ -23,6 +23,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Search } from "lucide-react";
 import { useCreateTransaction } from "@/lib/hooks/use-transactions";
+import { useCustomers } from "@/lib/hooks/use-customers";
 import { useToast } from "@/hooks/use-toast";
 
 interface TransactionFormProps {
@@ -37,7 +38,10 @@ interface TransactionItem {
 
 export function TransactionForm({ products }: TransactionFormProps) {
   const { toast } = useToast();
+  const { data: customersData } = useCustomers();
+  const customers = Array.isArray(customersData) ? customersData : [];
   const [notes, setNotes] = useState<string>("");
+  const [customerId, setCustomerId] = useState<string>("");
   const [items, setItems] = useState<TransactionItem[]>([
     { productId: "", quantity: 1, price: 0 },
   ]);
@@ -96,9 +100,20 @@ export function TransactionForm({ products }: TransactionFormProps) {
         ? paidAmount
         : 0;
 
+    // Validasi: status "unpaid/partial" wajib pilih pelanggan
+    if ((paymentStatus === "partial" || paymentStatus === "unpaid") && !customerId) {
+      toast({
+        title: "Pelanggan wajib dipilih",
+        description: "Pilih pelanggan untuk transaksi belum/lunas sebagian.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     createTransaction.mutate(
       {
         type: "sale",
+        customerId: customerId || undefined,
         totalAmount: totalAmount.toString(),
         paymentStatus,
         paidAmount: finalPaidAmount.toString(),
@@ -114,6 +129,7 @@ export function TransactionForm({ products }: TransactionFormProps) {
         onSuccess: () => {
           // Reset form
           setNotes("");
+          setCustomerId("");
           setItems([{ productId: "", quantity: 1, price: 0 }]);
           setProductSearch("");
           setPaymentStatus("paid");
@@ -127,7 +143,7 @@ export function TransactionForm({ products }: TransactionFormProps) {
           console.error("Error creating transaction:", error);
           toast({
             title: "Gagal",
-            description: "Gagal membuat transaksi",
+            description: "Gagal menyimpan transaksi",
             variant: "destructive",
           });
         },
@@ -143,6 +159,21 @@ export function TransactionForm({ products }: TransactionFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="customer">Pelanggan</Label>
+            <Select value={customerId} onValueChange={(v) => setCustomerId(v)}>
+              <SelectTrigger id="customer">
+                <SelectValue placeholder="Pilih pelanggan (opsional untuk Lunas)" />
+              </SelectTrigger>
+              <SelectContent>
+                {customers.map((c: any) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}{c.phone ? ` - ${c.phone}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <Label>Item Transaksi</Label>
@@ -247,15 +278,27 @@ export function TransactionForm({ products }: TransactionFormProps) {
             <Label htmlFor="payment-status">Status Pembayaran</Label>
             <Select
               value={paymentStatus}
-              onValueChange={(value: any) => setPaymentStatus(value)}
+              onValueChange={(value: any) => {
+                if ((value === "partial" || value === "unpaid") && !customerId) {
+                  toast({
+                    title: "Pelanggan wajib dipilih",
+                    description: "Pilih pelanggan untuk transaksi belum/lunas sebagian.",
+                    variant: "destructive",
+                  });
+                  return;
+                }
+                setPaymentStatus(value);
+                if (value === "unpaid") setPaidAmount(0);
+                if (value === "paid") setPaidAmount(calculateTotal());
+              }}
             >
               <SelectTrigger id="payment-status">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="paid">Lunas</SelectItem>
-                <SelectItem value="partial">Sebagian</SelectItem>
-                <SelectItem value="unpaid">Belum Bayar</SelectItem>
+                <SelectItem value="partial" disabled={!customerId}>Sebagian</SelectItem>
+                <SelectItem value="unpaid" disabled={!customerId}>Belum Bayar</SelectItem>
               </SelectContent>
             </Select>
           </div>

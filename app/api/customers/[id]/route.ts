@@ -3,10 +3,11 @@ import { db } from "@/lib/db"
 import { customers } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const customer = await db.query.customers.findFirst({
-      where: eq(customers.id, params.id),
+      where: eq(customers.id, id),
     })
 
     if (!customer) {
@@ -20,8 +21,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { name, phone, address } = body
 
@@ -32,7 +34,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         phone,
         address,
       })
-      .where(eq(customers.id, params.id))
+      .where(eq(customers.id, id))
       .returning()
 
     if (!updatedCustomer.length) {
@@ -46,9 +48,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const deletedCustomer = await db.delete(customers).where(eq(customers.id, params.id)).returning()
+    const { id } = await params
+    const deletedCustomer = await db.delete(customers).where(eq(customers.id, id)).returning()
 
     if (!deletedCustomer.length) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
