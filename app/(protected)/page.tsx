@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { SalesChart } from "@/components/sales-chart";
@@ -8,10 +8,15 @@ import { ProductSalesChart } from "@/components/product-sales-chart";
 import { RecentTransactions } from "@/components/recent-transactions";
 import type { TransactionsResponse, DebtsResponse, DateRangeOption } from "@/lib/types";
 
+// KODE LAMA (dikomentari): Helper asArray digunakan saat bentuk respons belum konsisten
+// const asArray = <T,>(v: unknown): T[] => Array.isArray(v) ? (v as T[]) : ((v as any)?.data ?? []);
+
+// PERUBAHAN: Sesuaikan dengan API paginated ({ data, pagination })
 async function fetchTransactions(): Promise<TransactionsResponse> {
   const response = await fetch("/api/transactions?type=sale");
   if (!response.ok) throw new Error("Failed to fetch transactions");
-  return response.json();
+  const body = await response.json();
+  return Array.isArray(body) ? body : body?.data ?? [];
 }
 
 async function fetchDebts(): Promise<DebtsResponse> {
@@ -34,16 +39,25 @@ export default function DashboardPage() {
     queryFn: fetchDebts,
   });
 
+  // PERUBAHAN: Menambahkan tipe eksplisit pada parameter `item` untuk menghindari TS7006 (implicit any).
+  // Versi baru memberi tipe minimal yang diperlukan.
   const calculateProfit = (transactions: TransactionsResponse): number => {
-    if (!transactions) return 0;
-    return transactions.reduce((total, transaction) => {
+    const list = transactions;
+    if (!list) return 0;
+    return list.reduce((total: number, transaction: any) => {
       const transactionProfit =
-        transaction.transactionItems?.reduce((sum: number, item) => {
-          const purchasePrice = Number(item.product?.purchasePrice || 0);
-          const sellingPrice = Number(item.price);
-          const profit = (sellingPrice - purchasePrice) * item.quantity;
-          return sum + profit;
-        }, 0) || 0;
+        transaction.transactionItems?.reduce(
+          (
+            sum: number,
+            item: { product?: { purchasePrice?: number }; price: number; quantity: number }
+          ) => {
+            const purchasePrice = Number(item.product?.purchasePrice ?? 0);
+            const sellingPrice = Number(item.price);
+            const profit = (sellingPrice - purchasePrice) * item.quantity;
+            return sum + profit;
+          },
+          0
+        ) ?? 0;
       return total + transactionProfit;
     }, 0);
   };
@@ -65,7 +79,7 @@ export default function DashboardPage() {
         break;
       case "last-month":
         start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        end.setDate(0); // Last day of previous month
+        end.setDate(0);
         end.setHours(23, 59, 59, 999);
         break;
       case "last-2-months":
@@ -87,27 +101,27 @@ export default function DashboardPage() {
     start: Date,
     end: Date
   ): TransactionsResponse => {
-    return transactions.filter((transaction) => {
+    return transactions.filter((transaction: any) => {
       const transactionDate = new Date(transaction.transactionDate);
       return transactionDate >= start && transactionDate <= end;
     });
   };
 
-  // Calculate stats using memoization
   const stats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
 
+    const normalizedAll = allTransactions as any[];
     const todayTransactions = filterTransactionsByDate(
-      allTransactions,
+      normalizedAll,
       today,
       endOfToday
     );
     const { start, end } = getDateRange(dateRange);
     const rangeTransactions = filterTransactionsByDate(
-      allTransactions,
+      normalizedAll,
       start,
       end
     );
@@ -150,17 +164,6 @@ export default function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-background">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-foreground">
-            Dashboard Penjualan Warung
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Kelola penjualan dan stok barang Anda
-          </p>
-        </div>
-      </header>
-
       <main className="flex-1 container mx-auto px-4 py-6">
         <DashboardStats
           todayProfit={stats.todayProfit}
@@ -181,7 +184,7 @@ export default function DashboardPage() {
 
         <div className="mt-6">
           <RecentTransactions
-            transactions={allTransactions?.slice(0, 10) || []}
+            transactions={(allTransactions as any[]).slice(0, 10)}
           />
         </div>
       </main>

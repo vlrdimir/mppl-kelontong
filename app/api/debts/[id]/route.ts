@@ -3,10 +3,11 @@ import { db } from "@/lib/db"
 import { debts } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const debt = await db.query.debts.findFirst({
-      where: eq(debts.id, params.id),
+      where: eq(debts.id, id),
       with: {
         customer: true,
         transaction: true,
@@ -25,8 +26,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { paidAmount, remainingDebt, status } = body
 
@@ -38,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         status,
         updatedAt: new Date(),
       })
-      .where(eq(debts.id, params.id))
+      .where(eq(debts.id, id))
       .returning()
 
     if (!updatedDebt.length) {
@@ -52,9 +54,10 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const deletedDebt = await db.delete(debts).where(eq(debts.id, params.id)).returning()
+    const { id } = await params
+    const deletedDebt = await db.delete(debts).where(eq(debts.id, id)).returning()
 
     if (!deletedDebt.length) {
       return NextResponse.json({ error: "Debt not found" }, { status: 404 })

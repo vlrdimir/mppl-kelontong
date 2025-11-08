@@ -6,57 +6,62 @@ import { eq } from "drizzle-orm"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { debtId, amount, notes } = body
+    const { debtId, amount, notes } = body as { debtId: string; amount: string; notes?: string }
 
-    // Use a transaction to update both debt_payments and debts
-    const result = await db.transaction(async (tx) => {
-      // Insert payment record
-      const [payment] = await tx
-        .insert(debtPayments)
-        .values({
-          debtId,
-          amount,
-          notes,
-        })
-        .returning()
+    // PERUBAHAN: Neon HTTP driver tidak mendukung db.transaction.
+    // Lakukan langkah berurutan dan cleanup manual jika update debt gagal.
 
-      // Get current debt info
-      const debt = await tx.query.debts.findFirst({
-        where: eq(debts.id, debtId),
-      })
+    // 1) Insert payment record
+    const [payment] = await db
+      .insert(debtPayments)
+      .values({ debtId, amount, notes })
+      .returning()
 
-      if (!debt) {
-        throw new Error("Debt not found")
+    try {
+      // 2) Ambil data debt saat ini
+      const currentDebt = await db.query.debts.findFirst({ where: eq(debts.id, debtId) })
+      if (!currentDebt) {
+        // Hapus payment jika debt tidak ditemukan (best-effort cleanup)
+        try { await db.delete(debtPayments).where(eq(debtPayments.id, payment.id)) } catch {}
+        return NextResponse.json({ error: "Debt not found" }, { status: 404 })
       }
 
-      // Calculate new paid amount and remaining debt
-      const newPaidAmount = Number(debt.paidAmount) + Number(amount)
-      const newRemainingDebt = Number(debt.totalDebt) - newPaidAmount
-
-      // Determine new status
-      let newStatus: "unpaid" | "partial" | "paid" = "partial"
-      if (newRemainingDebt <= 0) {
-        newStatus = "paid"
-      } else if (newPaidAmount === 0) {
-        newStatus = "unpaid"
+      // 3) Validasi dan hitung nilai baru
+      const amt = Number(amount ?? 0)
+      if (!Number.isFinite(amt) || amt <= 0) {
+        // Cleanup payment karena input tidak valid
+        try { await db.delete(debtPayments).where(eq(debtPayments.id, payment.id)) } catch {}
+        return NextResponse.json({ error: "Jumlah pembayaran harus lebih dari 0" }, { status: 400 })
+      }
+      const remainingBefore = Math.max(0, Number(currentDebt.remainingDebt ?? 0))
+      if (amt > remainingBefore) {
+        // Cleanup payment karena melebihi sisa hutang
+        try { await db.delete(debtPayments).where(eq(debtPayments.id, payment.id)) } catch {}
+        return NextResponse.json({ error: "Jumlah pembayaran melebihi sisa hutang" }, { status: 400 })
       }
 
-      // Update debt record
-      const [updatedDebt] = await tx
+      const newPaidAmount = Number(currentDebt.paidAmount ?? 0) + amt
+      const newRemainingDebt = Number(currentDebt.totalDebt ?? 0) - newPaidAmount
+      const newStatus: "unpaid" | "partial" | "paid" = newRemainingDebt <= 0 ? "paid" : newPaidAmount > 0 ? "partial" : "unpaid"
+
+      // 4) Update record debt
+      const [updatedDebt] = await db
         .update(debts)
         .set({
-          paidAmount: newPaidAmount.toString(),
-          remainingDebt: Math.max(0, newRemainingDebt).toString(),
+          paidAmount: String(newPaidAmount),
+          remainingDebt: String(Math.max(0, newRemainingDebt)),
           status: newStatus,
           updatedAt: new Date(),
         })
         .where(eq(debts.id, debtId))
         .returning()
 
-      return { payment, debt: updatedDebt }
-    })
-
-    return NextResponse.json(result, { status: 201 })
+      return NextResponse.json({ payment, debt: updatedDebt }, { status: 201 })
+    } catch (updateError) {
+      // Cleanup: hapus payment jika update debt gagal
+      try { await db.delete(debtPayments).where(eq(debtPayments.id, payment.id)) } catch {}
+      throw updateError
+    }
   } catch (error) {
     console.error("Error creating debt payment:", error)
     return NextResponse.json({ error: "Failed to create debt payment" }, { status: 500 })
