@@ -7,8 +7,15 @@ import {
 } from "@/lib/db/schema";
 import { and, asc, desc, eq, gte, lte, sql, sum } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import auth from "@/proxy";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const startDateParam = searchParams.get("startDate");

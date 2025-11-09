@@ -1,31 +1,56 @@
-import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { customers } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { customers } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import auth from "@/proxy";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { id } = await params
+    const { id } = await params;
     const customer = await db.query.customers.findFirst({
       where: eq(customers.id, id),
-    })
+    });
 
     if (!customer) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(customer)
+    return NextResponse.json(customer);
   } catch (error) {
-    console.error("Error fetching customer:", error)
-    return NextResponse.json({ error: "Failed to fetch customer" }, { status: 500 })
+    console.error("Error fetching customer:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch customer" },
+      { status: 500 }
+    );
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { id } = await params
-    const body = await request.json()
-    const { name, phone, address } = body
+    const { id } = await params;
+    const body = await request.json();
+    const { name, phone, address } = body;
 
     const updatedCustomer = await db
       .update(customers)
@@ -35,31 +60,55 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         address,
       })
       .where(eq(customers.id, id))
-      .returning()
+      .returning();
 
     if (!updatedCustomer.length) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(updatedCustomer[0])
+    return NextResponse.json(updatedCustomer[0]);
   } catch (error) {
-    console.error("Error updating customer:", error)
-    return NextResponse.json({ error: "Failed to update customer" }, { status: 500 })
+    console.error("Error updating customer:", error);
+    return NextResponse.json(
+      { error: "Failed to update customer" },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    const { id } = await params
-    const deletedCustomer = await db.delete(customers).where(eq(customers.id, id)).returning()
+    const { id } = await params;
+    const deletedCustomer = await db
+      .delete(customers)
+      .where(eq(customers.id, id))
+      .returning();
 
     if (!deletedCustomer.length) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Customer not found" },
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json({ message: "Customer deleted successfully" })
+    return NextResponse.json({ message: "Customer deleted successfully" });
   } catch (error) {
-    console.error("Error deleting customer:", error)
-    return NextResponse.json({ error: "Failed to delete customer" }, { status: 500 })
+    console.error("Error deleting customer:", error);
+    return NextResponse.json(
+      { error: "Failed to delete customer" },
+      { status: 500 }
+    );
   }
 }

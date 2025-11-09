@@ -7,8 +7,15 @@ import {
   products,
 } from "@/lib/db/schema";
 import { eq, desc, count } from "drizzle-orm";
+import auth from "@/proxy";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
@@ -85,6 +92,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {

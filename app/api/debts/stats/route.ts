@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { debts } from "@/lib/db/schema";
 import { sql, eq, count, not } from "drizzle-orm";
+import auth from "@/proxy";
 
 export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const totalOutstandingResult = await db
       .select({
