@@ -1,39 +1,56 @@
-import { create } from "zustand"
+import { create } from "zustand";
 
 interface PaginationState {
-  debtList: {
-    currentPage: number
-    itemsPerPage: number
-  }
+  customerList: {
+    currentPage: number;
+    itemsPerPage: number;
+  };
+  activeDebtsList: {
+    currentPage: number;
+    itemsPerPage: number;
+  };
+  paidDebtsList: {
+    currentPage: number;
+    itemsPerPage: number;
+  };
   productList: {
-    currentPage: number
-    itemsPerPage: number
-  }
+    currentPage: number;
+    itemsPerPage: number;
+  };
   transactionList: {
-    currentPage: number
-    itemsPerPage: number
-  }
+    currentPage: number;
+    itemsPerPage: number;
+  };
 }
 
 interface PaginationActions {
-  setDebtListPage: (page: number) => void
-  setDebtListItemsPerPage: (itemsPerPage: number) => void
-  setProductListPage: (page: number) => void
-  setProductListItemsPerPage: (itemsPerPage: number) => void
-  setTransactionListPage: (page: number) => void
-  setTransactionListItemsPerPage: (itemsPerPage: number) => void
-  resetDebtListPagination: () => void
-  resetProductListPagination: () => void
-  resetTransactionListPagination: () => void
+  setCustomerListPage: (page: number) => void;
+  setCustomerListItemsPerPage: (itemsPerPage: number) => void;
+  setActiveDebtsListPage: (page: number) => void;
+  setActiveDebtsListItemsPerPage: (itemsPerPage: number) => void;
+  setPaidDebtsListPage: (page: number) => void;
+  setPaidDebtsListItemsPerPage: (itemsPerPage: number) => void;
+  setProductListPage: (page: number) => void;
+  setProductListItemsPerPage: (itemsPerPage: number) => void;
+  setTransactionListPage: (page: number) => void;
+  setTransactionListItemsPerPage: (itemsPerPage: number) => void;
 }
 
-type PaginationStore = PaginationState & PaginationActions
+type PaginationStore = PaginationState & PaginationActions;
 
 export const usePaginationStore = create<PaginationStore>((set) => ({
   // Initial state
-  debtList: {
+  customerList: {
     currentPage: 1,
     itemsPerPage: 10,
+  },
+  activeDebtsList: {
+    currentPage: 1,
+    itemsPerPage: 5,
+  },
+  paidDebtsList: {
+    currentPage: 1,
+    itemsPerPage: 5,
   },
   productList: {
     currentPage: 1,
@@ -44,18 +61,46 @@ export const usePaginationStore = create<PaginationStore>((set) => ({
     itemsPerPage: 10,
   },
 
-  // Debt list actions
-  setDebtListPage: (page) =>
+  // Active Debts list actions
+  setActiveDebtsListPage: (page) =>
     set((state) => ({
-      debtList: { ...state.debtList, currentPage: page },
+      activeDebtsList: { ...state.activeDebtsList, currentPage: page },
     })),
-  setDebtListItemsPerPage: (itemsPerPage) =>
+  setActiveDebtsListItemsPerPage: (itemsPerPage) =>
     set((state) => ({
-      debtList: { ...state.debtList, itemsPerPage, currentPage: 1 },
+      activeDebtsList: {
+        ...state.activeDebtsList,
+        itemsPerPage,
+        currentPage: 1,
+      },
     })),
-  resetDebtListPagination: () =>
+
+  // Paid Debts list actions
+  setPaidDebtsListPage: (page) =>
     set((state) => ({
-      debtList: { ...state.debtList, currentPage: 1 },
+      paidDebtsList: { ...state.paidDebtsList, currentPage: page },
+    })),
+  setPaidDebtsListItemsPerPage: (itemsPerPage) =>
+    set((state) => ({
+      paidDebtsList: {
+        ...state.paidDebtsList,
+        itemsPerPage,
+        currentPage: 1,
+      },
+    })),
+
+  // Customer list actions
+  setCustomerListPage: (page) =>
+    set((state) => ({
+      customerList: { ...state.customerList, currentPage: page },
+    })),
+  setCustomerListItemsPerPage: (itemsPerPage) =>
+    set((state) => ({
+      customerList: { ...state.customerList, itemsPerPage, currentPage: 1 },
+    })),
+  resetCustomerListPagination: () =>
+    set((state) => ({
+      customerList: { ...state.customerList, currentPage: 1 },
     })),
 
   // Product list actions
@@ -79,10 +124,14 @@ export const usePaginationStore = create<PaginationStore>((set) => ({
     })),
   setTransactionListItemsPerPage: (itemsPerPage) =>
     set((state) => ({
-      transactionList: { ...state.transactionList, itemsPerPage, currentPage: 1 },
+      transactionList: {
+        ...state.transactionList,
+        itemsPerPage,
+        currentPage: 1,
+      },
     })),
   resetTransactionListPagination: () =>
     set((state) => ({
       transactionList: { ...state.transactionList, currentPage: 1 },
     })),
-}))
+}));
