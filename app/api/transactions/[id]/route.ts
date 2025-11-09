@@ -4,7 +4,10 @@ import { transactions, debts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import auth from "@/proxy";
 
-export async function GET({ params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/transactions/[id]">
+) {
   const session = await auth();
 
   if (!session?.user) {
@@ -12,7 +15,7 @@ export async function GET({ params }: { params: Promise<{ id: string }> }) {
   }
 
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const transaction = await db.query.transactions.findFirst({
       where: eq(transactions.id, id),
       with: {
@@ -43,7 +46,7 @@ export async function GET({ params }: { params: Promise<{ id: string }> }) {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: RouteContext<"/api/transactions/[id]">
 ) {
   const session = await auth();
 
@@ -52,7 +55,7 @@ export async function PATCH(
   }
 
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const body = await request.json();
     const { paymentStatus, paidAmount, notes, customerId } = body as Partial<{
       paymentStatus: string;
@@ -204,7 +207,10 @@ export async function PATCH(
   }
 }
 
-export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/transactions/[id]">
+) {
   const session = await auth();
 
   if (!session?.user) {
@@ -212,7 +218,7 @@ export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
   }
 
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const deletedTransaction = await db
       .delete(transactions)
       .where(eq(transactions.id, id))

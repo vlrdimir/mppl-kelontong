@@ -4,7 +4,10 @@ import { debtPayments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import auth from "@/proxy";
 
-export async function GET(ctx: RouteContext<"/api/customers/[id]">) {
+export async function GET(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/debts/[id]/payments">
+) {
   const session = await auth();
 
   if (!session?.user) {

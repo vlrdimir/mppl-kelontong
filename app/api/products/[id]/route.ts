@@ -4,14 +4,17 @@ import { products } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import auth from "@/proxy";
 
-export async function GET({ params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/products/[id]">
+) {
   const session = await auth();
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const product = await db.query.products.findFirst({
       where: eq(products.id, id),
     });
@@ -32,7 +35,7 @@ export async function GET({ params }: { params: Promise<{ id: string }> }) {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  ctx: RouteContext<"/api/products/[id]">
 ) {
   const session = await auth();
 
@@ -41,7 +44,7 @@ export async function PATCH(
   }
 
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const body = await request.json();
     const { name, category, stock, purchasePrice, sellingPrice } =
       body as Partial<{
@@ -86,7 +89,10 @@ export async function PATCH(
   }
 }
 
-export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _req: NextRequest,
+  ctx: RouteContext<"/api/products/[id]">
+) {
   const session = await auth();
 
   if (!session?.user) {
@@ -94,7 +100,7 @@ export async function DELETE({ params }: { params: Promise<{ id: string }> }) {
   }
 
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
     const deletedProduct = await db
       .delete(products)
       .where(eq(products.id, id))
