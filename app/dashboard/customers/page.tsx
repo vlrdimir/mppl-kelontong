@@ -3,17 +3,25 @@
 import { useQuery } from "@tanstack/react-query";
 import { CustomerList } from "@/components/customer-list";
 import { AddCustomerDialog } from "@/components/add-customer-dialog";
+import { usePaginationStore } from "@/lib/store/pagination-store";
+import type { PaginatedCustomersResponse } from "@/lib/types";
 
-async function fetchCustomers() {
-  const res = await fetch("/api/customers");
+async function fetchCustomers(
+  page: number,
+  limit: number
+): Promise<PaginatedCustomersResponse> {
+  const res = await fetch(`/api/customers?page=${page}&limit=${limit}`);
   if (!res.ok) throw new Error("Failed to fetch customers");
   return res.json();
 }
 
 export default function CustomersPageClient() {
+  const { currentPage, itemsPerPage } = usePaginationStore(
+    (state) => state.customerList
+  );
   const { data, isLoading, error } = useQuery({
-    queryKey: ["customers"],
-    queryFn: fetchCustomers,
+    queryKey: ["customers", currentPage, itemsPerPage],
+    queryFn: () => fetchCustomers(currentPage, itemsPerPage),
   });
 
   if (isLoading) {
@@ -32,7 +40,8 @@ export default function CustomersPageClient() {
     );
   }
 
-  const customers = Array.isArray(data) ? data : [];
+  const customers = data?.data || [];
+  const pagination = data?.pagination;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -40,8 +49,12 @@ export default function CustomersPageClient() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Manajemen Pelanggan</h1>
-              <p className="text-sm text-muted-foreground">Kelola data pelanggan (nama, no. HP, alamat)</p>
+              <h1 className="text-2xl font-bold text-foreground">
+                Manajemen Pelanggan
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Kelola data pelanggan (nama, no. HP, alamat)
+              </p>
             </div>
             <AddCustomerDialog />
           </div>
@@ -49,9 +62,8 @@ export default function CustomersPageClient() {
       </header>
 
       <main className="flex-1 container mx-auto px-4 py-6">
-        <CustomerList customers={customers} />
+        <CustomerList customers={customers} pagination={pagination} />
       </main>
     </div>
   );
 }
-
