@@ -158,8 +158,9 @@ export function EditTransactionDialog({
                     className="w-full justify-between"
                   >
                     {formData.customerId
-                      ? customers.find((c) => c.id === formData.customerId)
-                          ?.name
+                      ? customers.find(
+                          (c: Customer) => c.id === formData.customerId
+                        )?.name
                       : "Pilih pelanggan"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
