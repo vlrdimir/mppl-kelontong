@@ -1,35 +1,53 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Pagination } from "@/components/ui/pagination";
 import { EditCustomerDialog } from "@/components/edit-customer-dialog";
 import { DeleteCustomerDialog } from "@/components/delete-customer-dialog";
+import { usePaginationStore } from "@/lib/store/pagination-store";
+import type { Customer, PaginationMeta } from "@/lib/types";
 
-interface Customer {
-  id: string;
-  name: string;
-  phone?: string | null;
-  address?: string | null;
+interface CustomerListProps {
+  customers: Customer[];
+  pagination?: PaginationMeta;
 }
 
-export function CustomerList({ customers }: { customers: Customer[] }) {
+export function CustomerList({ customers, pagination }: CustomerListProps) {
   const [search, setSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const { currentPage, itemsPerPage } = usePaginationStore(
+    (state) => state.customerList
+  );
+  const setCurrentPage = usePaginationStore(
+    (state) => state.setCustomerListPage
+  );
+  const setItemsPerPage = usePaginationStore(
+    (state) => state.setCustomerListItemsPerPage
+  );
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return customers.filter((c) =>
-      c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q) || (c.address ?? "").toLowerCase().includes(q)
-    );
-  }, [customers, search]);
-
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginated = filtered.slice(startIndex, startIndex + itemsPerPage);
+  // Note: Search is now client-side on the current page's data.
+  // For full server-side search, the API would need to handle a search query.
+  const filteredCustomers = customers.filter(
+    (c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (c.address ?? "").toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <Card>
@@ -37,12 +55,18 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
         <CardTitle>Daftar Pelanggan</CardTitle>
         <CardDescription>Kelola data pelanggan</CardDescription>
         <div className="mt-4">
-          <Input placeholder="Cari nama/HP/alamat..." value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
+          <Input
+            placeholder="Cari nama/HP/alamat..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
       </CardHeader>
       <CardContent>
-        {filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">{search ? "Tidak ada yang cocok" : "Belum ada pelanggan"}</p>
+        {customers.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {search ? "Tidak ada yang cocok" : "Belum ada pelanggan"}
+          </p>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -56,11 +80,13 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginated.map((c) => (
+                  {filteredCustomers.map((c) => (
                     <TableRow key={c.id}>
                       <TableCell className="font-medium">{c.name}</TableCell>
                       <TableCell>{c.phone || "-"}</TableCell>
-                      <TableCell className="max-w-md truncate">{c.address || "-"}</TableCell>
+                      <TableCell className="max-w-md truncate">
+                        {c.address || "-"}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <EditCustomerDialog customer={c} />
@@ -72,18 +98,19 @@ export function CustomerList({ customers }: { customers: Customer[] }) {
                 </TableBody>
               </Table>
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemsPerPage={itemsPerPage}
-              totalItems={filtered.length}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
-            />
+            {pagination && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={pagination.total}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            )}
           </>
         )}
       </CardContent>
     </Card>
   );
 }
-
