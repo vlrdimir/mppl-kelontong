@@ -1,6 +1,6 @@
 {
-  "id": "6609e2c6-d384-4c4a-80fa-6cba5e2141e8",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "c63d9b08-ab59-49d3-968f-f2f4766b0bd7",
+  "prevId": "6609e2c6-d384-4c4a-80fa-6cba5e2141e8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -559,12 +559,6 @@
         },
         "email": {
           "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "password": {
-          "name": "password",
           "type": "text",
           "primaryKey": false,
           "notNull": true

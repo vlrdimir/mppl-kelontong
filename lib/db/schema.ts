@@ -6,8 +6,19 @@ import {
   decimal,
   timestamp,
   index,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+export const roleEnum = pgEnum("role", ["admin", "user"]);
+// Users table
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  role: roleEnum("role").notNull().default("user"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
 
 // Products table
 export const products = pgTable("products", {
