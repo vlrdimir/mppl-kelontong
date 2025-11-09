@@ -1,4 +1,5 @@
 import { Navigation, userProps } from "@/components/navigation";
+import { Toaster } from "@/components/ui/toaster";
 import auth from "@/proxy";
 
 async function Layout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,7 @@ async function Layout({ children }: { children: React.ReactNode }) {
         <Navigation user={session?.user as userProps} />
       </header>
       <main className="flex-1 p-4 sm:p-6">{children}</main>
+      <Toaster />
     </div>
   );
 }
