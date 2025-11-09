@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,29 +10,29 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Plus } from "lucide-react"
-import { useCreateProduct } from "@/lib/hooks/use-products"
-import { useToast } from "@/hooks/use-toast"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
+import { useCreateProduct } from "@/lib/hooks/use-products";
+import { useToast } from "@/hooks/use-toast";
 
 export function AddProductDialog() {
-  const { toast } = useToast()
-  const [open, setOpen] = useState(false)
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
     stock: "",
     purchasePrice: "",
     sellingPrice: "",
-  })
+  });
 
-  const createProduct = useCreateProduct()
+  const createProduct = useCreateProduct();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     createProduct.mutate(
       {
@@ -50,24 +50,24 @@ export function AddProductDialog() {
             stock: "",
             purchasePrice: "",
             sellingPrice: "",
-          })
-          setOpen(false)
+          });
+          setOpen(false);
           toast({
             title: "Berhasil",
             description: "Produk berhasil ditambahkan",
-          })
+          });
         },
         onError: (error) => {
-          console.error("Error adding product:", error)
+          console.error("Error adding product:", error);
           toast({
             title: "Gagal",
             description: "Gagal menambahkan produk",
-            variant: "destructive",
-          })
+            type: "background",
+          });
         },
       }
-    )
-  }
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -80,7 +80,9 @@ export function AddProductDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Tambah Produk Baru</DialogTitle>
-          <DialogDescription>Masukkan informasi produk yang akan ditambahkan</DialogDescription>
+          <DialogDescription>
+            Masukkan informasi produk yang akan ditambahkan
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -89,7 +91,9 @@ export function AddProductDialog() {
               id="name"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
             />
           </div>
 
@@ -98,7 +102,9 @@ export function AddProductDialog() {
             <Input
               id="category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
             />
           </div>
 
@@ -110,7 +116,9 @@ export function AddProductDialog() {
               min="0"
               required
               value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, stock: e.target.value })
+              }
             />
           </div>
 
@@ -123,7 +131,9 @@ export function AddProductDialog() {
               step="0.01"
               required
               value={formData.purchasePrice}
-              onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, purchasePrice: e.target.value })
+              }
             />
           </div>
 
@@ -136,12 +146,18 @@ export function AddProductDialog() {
               step="0.01"
               required
               value={formData.sellingPrice}
-              onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, sellingPrice: e.target.value })
+              }
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={createProduct.isPending}>
@@ -151,5 +167,5 @@ export function AddProductDialog() {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,40 +11,43 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
-import { useDeleteProduct } from "@/lib/hooks/use-products"
-import { useToast } from "@/hooks/use-toast"
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { useDeleteProduct } from "@/lib/hooks/use-products";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 interface DeleteProductDialogProps {
-  product: any
+  product: any;
 }
 
 export function DeleteProductDialog({ product }: DeleteProductDialogProps) {
-  const { toast } = useToast()
-  const [open, setOpen] = useState(false)
-  const deleteProduct = useDeleteProduct()
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const deleteProduct = useDeleteProduct();
+  const router = useRouter();
 
   const handleDelete = async () => {
     deleteProduct.mutate(product.id, {
       onSuccess: () => {
-        setOpen(false)
+        setOpen(false);
         toast({
           title: "Berhasil",
           description: "Produk berhasil dihapus",
-        })
+        });
       },
       onError: (error) => {
-        console.error("Error deleting product:", error)
+        console.error("Error deleting product:", error);
         toast({
           title: "Gagal",
-          description: "Gagal menghapus produk. Produk mungkin masih digunakan dalam transaksi.",
+          description:
+            "Gagal menghapus produk. Produk mungkin masih digunakan dalam transaksi.",
           variant: "destructive",
-        })
+        });
       },
-    })
-  }
+    });
+  };
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
@@ -57,7 +60,8 @@ export function DeleteProductDialog({ product }: DeleteProductDialogProps) {
         <AlertDialogHeader>
           <AlertDialogTitle>Hapus Produk?</AlertDialogTitle>
           <AlertDialogDescription>
-            Apakah Anda yakin ingin menghapus produk <strong>{product.name}</strong>? Tindakan ini tidak dapat
+            Apakah Anda yakin ingin menghapus produk{" "}
+            <strong>{product.name}</strong>? Tindakan ini tidak dapat
             dibatalkan.
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -66,12 +70,12 @@ export function DeleteProductDialog({ product }: DeleteProductDialogProps) {
           <AlertDialogAction
             onClick={handleDelete}
             disabled={deleteProduct.isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            className="bg-destructive text-white hover:bg-destructive/90"
           >
             {deleteProduct.isPending ? "Menghapus..." : "Hapus"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  )
+  );
 }
