@@ -1,64 +1,71 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { EditProductDialog } from "@/components/edit-product-dialog"
-import { DeleteProductDialog } from "@/components/delete-product-dialog"
-import { Search } from "lucide-react"
-import { Pagination } from "@/components/ui/pagination"
-import { usePaginationStore } from "@/lib/store/pagination-store"
-import type { Product } from "@/lib/types"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { EditProductDialog } from "@/components/edit-product-dialog";
+import { DeleteProductDialog } from "@/components/delete-product-dialog";
+import { Search } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
+import { usePaginationStore } from "@/lib/store/pagination-store";
+import type { Product, PaginationMeta } from "@/lib/types";
 
 interface ProductListProps {
-  products: Product[]
+  products: Product[];
+  pagination?: PaginationMeta;
 }
 
-export function ProductList({ products }: ProductListProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const { currentPage, itemsPerPage } = usePaginationStore((state) => state.productList)
-  const setCurrentPage = usePaginationStore((state) => state.setProductListPage)
-  const setItemsPerPage = usePaginationStore((state) => state.setProductListItemsPerPage)
+export function ProductList({ products, pagination }: ProductListProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const { currentPage, itemsPerPage } = usePaginationStore(
+    (state) => state.productList
+  );
+  const setCurrentPage = usePaginationStore(
+    (state) => state.setProductListPage
+  );
+  const setItemsPerPage = usePaginationStore(
+    (state) => state.setProductListItemsPerPage
+  );
 
+  // Client-side search on the current page's data
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category?.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
-
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
-
-  const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage)
-  }
-
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
-    setCurrentPage(1)
-  }
+      product.category?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   const getStockBadge = (stock: number) => {
     if (stock === 0) {
-      return <Badge variant="destructive">Habis</Badge>
+      return <Badge variant="destructive">Habis</Badge>;
     }
     if (stock < 10) {
-      return <Badge variant="secondary">Menipis</Badge>
+      return <Badge variant="secondary">Menipis</Badge>;
     }
-    return <Badge variant="default">Tersedia</Badge>
-  }
+    return <Badge variant="default">Tersedia</Badge>;
+  };
 
   return (
     <Card>
@@ -70,13 +77,13 @@ export function ProductList({ products }: ProductListProps) {
           <Input
             placeholder="Cari produk atau kategori..."
             value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
       </CardHeader>
       <CardContent>
-        {filteredProducts.length === 0 ? (
+        {products.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
             {searchQuery ? "Tidak ada produk yang cocok" : "Belum ada produk"}
           </p>
@@ -96,13 +103,18 @@ export function ProductList({ products }: ProductListProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedProducts.map((product) => {
-                    const margin = Number(product.sellingPrice) - Number(product.purchasePrice)
-                    const marginPercent = (margin / Number(product.purchasePrice)) * 100
+                  {filteredProducts.map((product) => {
+                    const margin =
+                      Number(product.sellingPrice) -
+                      Number(product.purchasePrice);
+                    const marginPercent =
+                      (margin / Number(product.purchasePrice)) * 100;
 
                     return (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {product.name}
+                        </TableCell>
                         <TableCell>{product.category || "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -110,12 +122,20 @@ export function ProductList({ products }: ProductListProps) {
                             {getStockBadge(product.stock)}
                           </div>
                         </TableCell>
-                        <TableCell>{formatCurrency(product.purchasePrice)}</TableCell>
-                        <TableCell>{formatCurrency(product.sellingPrice)}</TableCell>
+                        <TableCell>
+                          {formatCurrency(Number(product.purchasePrice))}
+                        </TableCell>
+                        <TableCell>
+                          {formatCurrency(Number(product.sellingPrice))}
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            <div className="font-medium text-emerald-600">{formatCurrency(margin)}</div>
-                            <div className="text-muted-foreground">{marginPercent.toFixed(1)}%</div>
+                            <div className="font-medium text-emerald-600">
+                              {formatCurrency(margin)}
+                            </div>
+                            <div className="text-muted-foreground">
+                              {marginPercent.toFixed(1)}%
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -125,22 +145,24 @@ export function ProductList({ products }: ProductListProps) {
                           </div>
                         </TableCell>
                       </TableRow>
-                    )
+                    );
                   })}
                 </TableBody>
               </Table>
             </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              itemsPerPage={itemsPerPage}
-              totalItems={filteredProducts.length}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={handleItemsPerPageChange}
-            />
+            {pagination && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={pagination.totalPages}
+                itemsPerPage={itemsPerPage}
+                totalItems={pagination.total}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+              />
+            )}
           </>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
