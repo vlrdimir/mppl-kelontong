@@ -1,48 +1,58 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts"
-import type { Transaction } from "@/lib/types"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 interface SalesChartProps {
-  transactions: Transaction[]
+  data: { date: string; penjualan: number }[];
 }
 
-export function SalesChart({ transactions }: SalesChartProps) {
-  // Group transactions by date
-  const salesByDate = transactions.reduce((acc: Record<string, number>, transaction) => {
-    const date = new Date(transaction.transactionDate).toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-    })
-
-    if (!acc[date]) {
-      acc[date] = 0
-    }
-
-    acc[date] += Number(transaction.totalAmount)
-    return acc
-  }, {})
-
-  const chartData = Object.entries(salesByDate)
-    .map(([date, amount]) => ({
-      date,
-      penjualan: amount,
-    }))
-    .reverse()
-    .slice(-14) // Last 14 days
-
+export function SalesChart({ data: chartData }: SalesChartProps) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Tren Penjualan</CardTitle>
-        <CardDescription>Grafik penjualan 14 hari terakhir</CardDescription>
+        <CardDescription>
+          Grafik penjualan berdasarkan rentang waktu yang dipilih
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartData}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="colorPenjualan" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="5%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis dataKey="date" className="text-xs" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+            <XAxis
+              dataKey="date"
+              className="text-xs"
+              tick={{ fill: "hsl(var(--muted-foreground))" }}
+            />
             <YAxis
               className="text-xs"
               tick={{ fill: "hsl(var(--muted-foreground))" }}
@@ -62,16 +72,18 @@ export function SalesChart({ transactions }: SalesChartProps) {
                 }).format(value)
               }
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="penjualan"
               stroke="hsl(var(--primary))"
               strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorPenjualan)"
               dot={{ fill: "hsl(var(--primary))" }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
-  )
+  );
 }
