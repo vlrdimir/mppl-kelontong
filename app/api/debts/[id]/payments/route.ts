@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { debtPayments } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+
+export async function GET(
+  request: NextRequest,
+  ctx: RouteContext<"/api/customers/[id]">
+) {
+  try {
+    const { id: debtId } = await ctx.params;
+
+    if (!debtId) {
+      return NextResponse.json(
+        { error: "Debt ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const payments = await db.query.debtPayments.findMany({
+      where: eq(debtPayments.debtId, debtId),
+      orderBy: (payments, { desc }) => [desc(payments.paymentDate)],
+    });
+
+    return NextResponse.json(payments);
+  } catch (error) {
+    console.error("Error fetching debt payments:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch debt payments" },
+      { status: 500 }
+    );
+  }
+}

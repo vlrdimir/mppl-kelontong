@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,48 +10,50 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { DollarSign } from "lucide-react"
-import { useCreateDebtPayment } from "@/lib/hooks/use-debts"
-import { useToast } from "@/hooks/use-toast"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { DollarSign } from "lucide-react";
+import { useCreateDebtPayment } from "@/lib/hooks/use-debts";
+import { useToast } from "@/hooks/use-toast";
 
 interface PayDebtDialogProps {
-  debt: any
+  debt: any;
 }
 
 export function PayDebtDialog({ debt }: PayDebtDialogProps) {
-  const { toast } = useToast()
-  const [open, setOpen] = useState(false)
-  const [amount, setAmount] = useState("")
-  const [notes, setNotes] = useState("")
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [notes, setNotes] = useState("");
 
-  const createPayment = useCreateDebtPayment()
+  const createPayment = useCreateDebtPayment();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
-    }).format(amount)
-  }
+    }).format(amount);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const paymentAmount = Number.parseFloat(amount)
-    const remainingDebt = Number(debt.remainingDebt || debt.remaining_debt || 0)
+    const paymentAmount = Number.parseFloat(amount);
+    const remainingDebt = Number(
+      debt.remainingDebt || debt.remaining_debt || 0
+    );
 
     if (paymentAmount <= 0 || paymentAmount > remainingDebt) {
       toast({
         title: "Gagal",
         description: "Jumlah pembayaran tidak valid",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
     createPayment.mutate(
@@ -62,34 +64,34 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
       },
       {
         onSuccess: () => {
-          setAmount("")
-          setNotes("")
-          setOpen(false)
+          setAmount("");
+          setNotes("");
+          setOpen(false);
           toast({
             title: "Berhasil",
             description: "Pembayaran berhasil dicatat",
-          })
+          });
         },
         onError: (error) => {
-          console.error("Error recording payment:", error)
+          console.error("Error recording payment:", error);
           toast({
             title: "Gagal",
             description: "Gagal mencatat pembayaran",
             variant: "destructive",
-          })
+          });
         },
       }
-    )
-  }
+    );
+  };
 
   const handlePayFull = () => {
-    const remainingDebt = debt.remainingDebt || debt.remaining_debt || 0
-    setAmount(remainingDebt.toString())
-  }
+    const remainingDebt = debt.remainingDebt || debt.remaining_debt || 0;
+    setAmount(remainingDebt.toString());
+  };
 
-  const totalDebt = Number(debt.totalDebt || debt.total_debt || 0)
-  const paidAmount = Number(debt.paidAmount || debt.paid_amount || 0)
-  const remainingDebt = Number(debt.remainingDebt || debt.remaining_debt || 0)
+  const totalDebt = Number(debt.totalDebt || debt.total_debt || 0);
+  const paidAmount = Number(debt.paidAmount || debt.paid_amount || 0);
+  const remainingDebt = Number(debt.remainingDebt || debt.remaining_debt || 0);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -102,7 +104,9 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Catat Pembayaran</DialogTitle>
-          <DialogDescription>Catat pembayaran piutang dari {debt.customer?.name}</DialogDescription>
+          <DialogDescription>
+            Catat pembayaran piutang dari {debt.customer?.name}
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2 py-4 border-y">
@@ -112,11 +116,15 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Sudah Dibayar:</span>
-            <span className="font-semibold text-emerald-600">{formatCurrency(paidAmount)}</span>
+            <span className="font-semibold text-emerald-600">
+              {formatCurrency(paidAmount)}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Sisa Hutang:</span>
-            <span className="font-bold text-red-600">{formatCurrency(remainingDebt)}</span>
+            <span className="font-bold text-red-600">
+              {formatCurrency(remainingDebt)}
+            </span>
           </div>
         </div>
 
@@ -139,7 +147,9 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
                 Lunas
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Maksimal: {formatCurrency(remainingDebt)}</p>
+            <p className="text-xs text-muted-foreground">
+              Maksimal: {formatCurrency(remainingDebt)}
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -153,7 +163,11 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={createPayment.isPending}>
@@ -163,5 +177,5 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
