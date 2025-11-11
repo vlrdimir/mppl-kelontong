@@ -135,19 +135,16 @@ export const authConfig = {
       console.log(credentials, "credentials");
       console.log(email, "email");
 
-      const signup = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/login`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            email: user.email,
-            name: user.name,
-          }),
-        }
-      );
+      const signup = await fetch(`${process.env.HOSTNAME}/api/login`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+          name: user.name,
+        }),
+      });
 
       if (signup.status !== 200) {
         return false;
