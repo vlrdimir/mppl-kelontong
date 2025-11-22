@@ -37,8 +37,12 @@ export function useCreateTransaction() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error("Failed to create transaction");
-      return response.json();
+
+      const dataResponse = await response.json();
+
+      if (!response.ok) throw new Error(dataResponse.error);
+
+      return dataResponse;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });

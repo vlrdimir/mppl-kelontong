@@ -172,7 +172,7 @@ export function TransactionForm({ products }: TransactionFormProps) {
       toast({
         title: "Pelanggan wajib dipilih",
         description: "Pilih pelanggan untuk transaksi belum/lunas sebagian.",
-        variant: "destructive",
+        variant: "default",
       });
       return;
     }
@@ -217,8 +217,8 @@ export function TransactionForm({ products }: TransactionFormProps) {
           console.error("Error creating transaction:", error);
           toast({
             title: "Gagal",
-            description: "Gagal menyimpan transaksi",
-            variant: "destructive",
+            description: error.message || "Gagal menyimpan transaksi",
+            variant: "default",
           });
         },
       }
