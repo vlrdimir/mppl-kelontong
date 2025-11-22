@@ -59,9 +59,9 @@ export default function DashboardPage() {
           <ProductSalesChart data={stats?.productSalesChartData || []} />
         </div>
 
-        <div className="mt-6">
+        {/* <div className="mt-6">
           <RecentTransactions transactions={stats?.recentTransactions || []} />
-        </div>
+        </div> */}
       </main>
     </div>
   );
