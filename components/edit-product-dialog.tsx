@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,33 +10,39 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Pencil } from "lucide-react"
-import { useUpdateProduct } from "@/lib/hooks/use-products"
-import { useToast } from "@/hooks/use-toast"
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Pencil } from "lucide-react";
+import { useUpdateProduct } from "@/lib/hooks/use-products";
+import { useToast } from "@/hooks/use-toast";
 
 interface EditProductDialogProps {
-  product: any
+  product: any;
 }
 
 export function EditProductDialog({ product }: EditProductDialogProps) {
-  const { toast } = useToast()
-  const [open, setOpen] = useState(false)
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: product.name,
     category: product.category || "",
     stock: product.stock.toString(),
-    purchasePrice: product.purchasePrice?.toString() || product.purchase_price?.toString() || "",
-    sellingPrice: product.sellingPrice?.toString() || product.selling_price?.toString() || "",
-  })
+    purchasePrice:
+      product.purchasePrice?.toString() ||
+      product.purchase_price?.toString() ||
+      "",
+    sellingPrice:
+      product.sellingPrice?.toString() ||
+      product.selling_price?.toString() ||
+      "",
+  });
 
-  const updateProduct = useUpdateProduct()
+  const updateProduct = useUpdateProduct();
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     updateProduct.mutate(
       {
@@ -51,23 +57,23 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
       },
       {
         onSuccess: () => {
-          setOpen(false)
+          setOpen(false);
           toast({
             title: "Berhasil",
             description: "Produk berhasil diupdate",
-          })
+          });
         },
         onError: (error) => {
-          console.error("Error updating product:", error)
+          console.error("Error updating product:", error);
           toast({
             title: "Gagal",
             description: "Gagal mengupdate produk",
-            variant: "destructive",
-          })
+            variant: "default",
+          });
         },
       }
-    )
-  }
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -88,7 +94,9 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
               id="edit-name"
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
             />
           </div>
 
@@ -97,7 +105,9 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
             <Input
               id="edit-category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, category: e.target.value })
+              }
             />
           </div>
 
@@ -109,7 +119,9 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
               min="0"
               required
               value={formData.stock}
-              onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, stock: e.target.value })
+              }
             />
           </div>
 
@@ -122,7 +134,9 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
               step="0.01"
               required
               value={formData.purchasePrice}
-              onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, purchasePrice: e.target.value })
+              }
             />
           </div>
 
@@ -135,12 +149,18 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
               step="0.01"
               required
               value={formData.sellingPrice}
-              onChange={(e) => setFormData({ ...formData, sellingPrice: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, sellingPrice: e.target.value })
+              }
             />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={updateProduct.isPending}>
@@ -150,5 +170,5 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -43,7 +43,7 @@ export function DeleteProductDialog({ product }: DeleteProductDialogProps) {
           title: "Gagal",
           description:
             "Gagal menghapus produk. Produk mungkin masih digunakan dalam transaksi.",
-          variant: "destructive",
+          variant: "default",
         });
       },
     });

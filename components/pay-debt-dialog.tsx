@@ -51,7 +51,7 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
       toast({
         title: "Gagal",
         description: "Jumlah pembayaran tidak valid",
-        variant: "destructive",
+        variant: "default",
       });
       return;
     }
@@ -77,7 +77,7 @@ export function PayDebtDialog({ debt }: PayDebtDialogProps) {
           toast({
             title: "Gagal",
             description: "Gagal mencatat pembayaran",
-            variant: "destructive",
+            variant: "default",
           });
         },
       }

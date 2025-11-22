@@ -29,7 +29,11 @@ export function DeleteCustomerDialog({ customer }: { customer: any }) {
         toast({ title: "Berhasil", description: "Pelanggan berhasil dihapus" });
       },
       onError: () => {
-        toast({ title: "Gagal", description: "Gagal menghapus pelanggan", variant: "destructive" });
+        toast({
+          title: "Gagal",
+          description: "Gagal menghapus pelanggan",
+          variant: "default",
+        });
       },
     });
   };
@@ -50,7 +54,10 @@ export function DeleteCustomerDialog({ customer }: { customer: any }) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Batal</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} disabled={deleteCustomer.isPending}>
+          <AlertDialogAction
+            onClick={handleDelete}
+            disabled={deleteCustomer.isPending}
+          >
             {deleteCustomer.isPending ? "Menghapus..." : "Hapus"}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -58,4 +65,3 @@ export function DeleteCustomerDialog({ customer }: { customer: any }) {
     </AlertDialog>
   );
 }
-

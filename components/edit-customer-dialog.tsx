@@ -29,14 +29,28 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     updateCustomer.mutate(
-      { id: customer.id, data: { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined } },
+      {
+        id: customer.id,
+        data: {
+          name: formData.name,
+          phone: formData.phone || undefined,
+          address: formData.address || undefined,
+        },
+      },
       {
         onSuccess: () => {
           setOpen(false);
-          toast({ title: "Berhasil", description: "Pelanggan berhasil diupdate" });
+          toast({
+            title: "Berhasil",
+            description: "Pelanggan berhasil diupdate",
+          });
         },
         onError: () => {
-          toast({ title: "Gagal", description: "Gagal mengupdate pelanggan", variant: "destructive" });
+          toast({
+            title: "Gagal",
+            description: "Gagal mengupdate pelanggan",
+            variant: "default",
+          });
         },
       }
     );
@@ -57,18 +71,41 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="edit-cust-name">Nama *</Label>
-            <Input id="edit-cust-name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <Input
+              id="edit-cust-name"
+              required
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-cust-phone">No. HP</Label>
-            <Input id="edit-cust-phone" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+            <Input
+              id="edit-cust-phone"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-cust-address">Alamat</Label>
-            <Input id="edit-cust-address" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+            <Input
+              id="edit-cust-address"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+            />
           </div>
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Batal
             </Button>
             <Button type="submit" disabled={updateCustomer.isPending}>
@@ -80,4 +117,3 @@ export function EditCustomerDialog({ customer }: { customer: any }) {
     </Dialog>
   );
 }
-
