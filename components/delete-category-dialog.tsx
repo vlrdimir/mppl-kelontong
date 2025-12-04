@@ -42,7 +42,6 @@ export function DeleteCategoryDialog({ category }: DeleteCategoryDialogProps) {
           description:
             error.message ||
             "Gagal menghapus kategori. Kategori mungkin masih digunakan oleh produk.",
-          variant: "destructive",
         });
       },
     });

@@ -47,7 +47,7 @@ export function AddProductDialog() {
     createProduct.mutate(
       {
         name: formData.name,
-        categoryId: formData.categoryId
+        categoryId: formData.categoryId && formData.categoryId !== "none"
           ? Number.parseInt(formData.categoryId)
           : undefined,
         stock: Number.parseInt(formData.stock),
@@ -121,7 +121,7 @@ export function AddProductDialog() {
                 <SelectValue placeholder="Pilih kategori (opsional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tidak ada kategori</SelectItem>
+                <SelectItem value="none">Tidak ada kategori</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}

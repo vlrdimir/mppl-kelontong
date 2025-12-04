@@ -4,6 +4,7 @@ import {
   transactions,
   transactionItems,
   debts,
+  debtPayments,
   products,
 } from "@/lib/db/schema";
 import { eq, desc, count } from "drizzle-orm";
@@ -249,14 +250,31 @@ export async function POST(request: NextRequest) {
       if (remaining > 0 || debtStatus === "paid") {
         // Jika remaining > 0 buat piutang; jika paid, kita tidak buat piutang, namun pola ini menjaga konsistensi jika UI ingin menampilkan status
         if (remaining > 0) {
-          await db.insert(debts).values({
-            customerId: transaction.customerId!,
-            transactionId: transaction.id,
-            totalDebt: transaction.totalAmount,
-            paidAmount: transaction.paidAmount ?? "0",
-            remainingDebt: String(remaining),
-            status: debtStatus,
-          });
+          const [newDebt] = await db
+            .insert(debts)
+            .values({
+              customerId: transaction.customerId!,
+              transactionId: transaction.id,
+              totalDebt: transaction.totalAmount,
+              paidAmount: transaction.paidAmount ?? "0",
+              remainingDebt: String(remaining),
+              status: debtStatus,
+            })
+            .returning();
+
+          // Jika status adalah partial atau paid dan ada pembayaran, buat debt payment entry
+          if (
+            newDebt &&
+            (debtStatus === "partial" || debtStatus === "paid") &&
+            paid > 0
+          ) {
+            await db.insert(debtPayments).values({
+              debtId: newDebt.id,
+              amount: String(paid),
+              paymentDate: transaction.transactionDate || new Date(),
+              notes: transaction.notes || "-",
+            });
+          }
         }
       }
     } catch (itemsError) {

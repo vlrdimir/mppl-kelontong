@@ -65,5 +65,7 @@ export function useDebtPayments(debtId: string) {
       return response.json();
     },
     enabled: !!debtId, // Only fetch if debtId is provided
+    refetchOnWindowFocus: true, // Refetch when window is focused
+    refetchOnMount: true, // Refetch when component mounts
   });
 }

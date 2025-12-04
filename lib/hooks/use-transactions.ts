@@ -49,6 +49,8 @@ export function useCreateTransaction() {
       queryClient.invalidateQueries({ queryKey: ["products"] });
       queryClient.invalidateQueries({ queryKey: ["debts"] });
       queryClient.invalidateQueries({ queryKey: ["debtStats"] });
+      // Invalidate debtPayments untuk memastikan riwayat pembayaran ter-update
+      queryClient.invalidateQueries({ queryKey: ["debtPayments"] });
     },
   });
 }

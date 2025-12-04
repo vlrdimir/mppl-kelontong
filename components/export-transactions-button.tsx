@@ -41,7 +41,6 @@ export function ExportTransactionsButton() {
       toast({
         title: "Error",
         description: "Gagal mengekspor laporan. Silakan coba lagi.",
-        variant: "destructive",
       });
     } finally {
       setIsExporting(false);

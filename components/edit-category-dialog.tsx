@@ -40,7 +40,6 @@ export function EditCategoryDialog({ category }: EditCategoryDialogProps) {
     if (!formData.name.trim()) {
       toast({
         title: "Nama kategori wajib diisi",
-        variant: "destructive",
       });
       return;
     }
@@ -65,7 +64,6 @@ export function EditCategoryDialog({ category }: EditCategoryDialogProps) {
           toast({
             title: "Gagal",
             description: error.message || "Gagal mengupdate kategori",
-            variant: "destructive",
           });
         },
       }
