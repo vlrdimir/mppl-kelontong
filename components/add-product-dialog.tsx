@@ -33,7 +33,7 @@ export function AddProductDialog() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    categoryId: "",
+    categoryId: "none",
     stock: "",
     purchasePrice: "",
     sellingPrice: "",
@@ -47,9 +47,10 @@ export function AddProductDialog() {
     createProduct.mutate(
       {
         name: formData.name,
-        categoryId: formData.categoryId && formData.categoryId !== "none"
-          ? Number.parseInt(formData.categoryId)
-          : undefined,
+        categoryId:
+          formData.categoryId && formData.categoryId !== "none"
+            ? Number.parseInt(formData.categoryId)
+            : undefined,
         stock: Number.parseInt(formData.stock),
         purchasePrice: formData.purchasePrice,
         sellingPrice: formData.sellingPrice,
@@ -58,7 +59,7 @@ export function AddProductDialog() {
         onSuccess: () => {
           setFormData({
             name: "",
-            categoryId: "",
+            categoryId: "none",
             stock: "",
             purchasePrice: "",
             sellingPrice: "",
@@ -121,7 +122,6 @@ export function AddProductDialog() {
                 <SelectValue placeholder="Pilih kategori (opsional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Tidak ada kategori</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id.toString()}>
                     {category.name}
