@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
-import { asc, count } from "drizzle-orm";
+import { asc, count, ilike, eq } from "drizzle-orm";
 import auth from "@/proxy";
 
 export async function GET(request: NextRequest) {
@@ -22,8 +22,11 @@ export async function GET(request: NextRequest) {
       .select({ value: count() })
       .from(products);
 
-    // Get paginated products
+    // Get paginated products with category relation
     const allProducts = await db.query.products.findMany({
+      with: {
+        category: true,
+      },
       orderBy: [asc(products.name)],
       limit: limit,
       offset: offset,
@@ -56,20 +59,53 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, category, stock, purchasePrice, sellingPrice } = body;
+    const { name, categoryId, stock, purchasePrice, sellingPrice } = body as {
+      name: string;
+      categoryId?: number;
+      stock: number;
+      purchasePrice: string;
+      sellingPrice: string;
+    };
+
+    if (!name || name.trim() === "") {
+      return NextResponse.json(
+        { error: "Nama produk wajib diisi" },
+        { status: 400 }
+      );
+    }
+
+    // Validasi duplicate name (case-insensitive)
+    const existingProduct = await db.query.products.findFirst({
+      where: ilike(products.name, name.trim()),
+    });
+
+    if (existingProduct) {
+      return NextResponse.json(
+        { error: `Produk "${name}" sudah ada` },
+        { status: 400 }
+      );
+    }
 
     const newProduct = await db
       .insert(products)
       .values({
-        name,
-        category,
+        name: name.trim(),
+        categoryId: categoryId || null,
         stock,
         purchasePrice,
         sellingPrice,
       })
       .returning();
 
-    return NextResponse.json(newProduct[0], { status: 201 });
+    // Fetch with category relation
+    const productWithCategory = await db.query.products.findFirst({
+      where: eq(products.id, newProduct[0].id),
+      with: {
+        category: true,
+      },
+    });
+
+    return NextResponse.json(productWithCategory, { status: 201 });
   } catch (error) {
     console.error("Error creating product:", error);
     return NextResponse.json(

@@ -1,8 +1,16 @@
 // Base types
-export interface Product {
-  id: string;
+export interface Category {
+  id: number;
   name: string;
-  category: string;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  categoryId: number | null;
+  category?: Category;
   stock: number;
   purchasePrice: string;
   sellingPrice: string;
@@ -20,8 +28,8 @@ export interface Customer {
 
 export interface TransactionItem {
   id: string;
-  transactionId: string;
-  productId: string;
+  transactionId: number;
+  productId: number;
   quantity: number;
   price: string;
   subtotal: string;
@@ -30,9 +38,10 @@ export interface TransactionItem {
 }
 
 export interface Transaction {
-  id: string;
+  id: number;
   type: string;
   customerId: string | null;
+  customer?: Customer | null;
   totalAmount: string;
   paymentStatus: string;
   paidAmount: string;
@@ -54,7 +63,7 @@ export interface DebtPayment {
 export interface Debt {
   id: string;
   customerId: string;
-  transactionId: string;
+  transactionId: number;
   totalDebt: string;
   paidAmount: string;
   remainingDebt: string;
@@ -107,9 +116,16 @@ export interface PaginatedDebtsResponse {
 }
 
 // Form input types
+export interface CreateCategoryInput {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryInput extends Partial<CreateCategoryInput> {}
+
 export interface CreateProductInput {
   name: string;
-  category?: string;
+  categoryId?: number;
   stock: number;
   purchasePrice: string;
   sellingPrice: string;
@@ -126,7 +142,7 @@ export interface CreateCustomerInput {
 export interface UpdateCustomerInput extends Partial<CreateCustomerInput> {}
 
 export interface CreateTransactionItemInput {
-  productId: string;
+  productId: number;
   quantity: number;
   price: string;
   subtotal: string;
@@ -144,7 +160,7 @@ export interface CreateTransactionInput {
 
 export interface CreateDebtInput {
   customerId: string;
-  transactionId: string;
+  transactionId: number;
   totalDebt: string;
   paidAmount?: string;
   remainingDebt: string;

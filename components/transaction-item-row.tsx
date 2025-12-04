@@ -20,7 +20,7 @@ import { ChevronsUpDown, Trash2 } from "lucide-react";
 import type { TransactionItem } from "./transaction-form";
 
 interface Product {
-  id: string;
+  id: number;
   name: string;
   stock: number;
   sellingPrice: string;

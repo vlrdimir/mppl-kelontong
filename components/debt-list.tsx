@@ -20,6 +20,9 @@ import { PayDebtDialog } from "@/components/pay-debt-dialog";
 import { DebtHistoryDialog } from "@/components/debt-history-dialog";
 import { Pagination } from "@/components/ui/pagination";
 import { usePaginationStore } from "@/lib/store/pagination-store";
+import { usePrintDebtInvoice } from "@/lib/hooks/use-print-debt-invoice";
+import { Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Debt, PaginationMeta } from "@/lib/types";
 
 interface DebtListProps {
@@ -50,6 +53,7 @@ export function DebtList({
       ? state.setActiveDebtsListItemsPerPage
       : state.setPaidDebtsListItemsPerPage
   );
+  const { printDebtInvoice } = usePrintDebtInvoice();
 
   const formatCurrency = (amount: string | number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -65,6 +69,12 @@ export function DebtList({
       month: "short",
       year: "numeric",
     });
+  };
+
+  const formatInvoiceNumber = (id: number) => {
+    const idString = String(id);
+    const padding = Math.max(4, idString.length);
+    return `INV-${idString.padStart(padding, "0")}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -104,6 +114,7 @@ export function DebtList({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Kode Invoice</TableHead>
                     <TableHead>Pelanggan</TableHead>
                     <TableHead>Tanggal</TableHead>
                     <TableHead>Total Hutang</TableHead>
@@ -116,6 +127,11 @@ export function DebtList({
                 <TableBody>
                   {debts.map((debt) => (
                     <TableRow key={debt.id}>
+                      <TableCell className="font-semibold">
+                        {debt?.transactionId
+                          ? formatInvoiceNumber(debt.transactionId)
+                          : "-"}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {debt.customer?.name || "-"}
                       </TableCell>
@@ -130,6 +146,16 @@ export function DebtList({
                       <TableCell>{getStatusBadge(debt.status)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {debt.status === "paid" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => printDebtInvoice(debt)}
+                              title="Cetak Bukti Pelunasan"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          )}
                           <DebtHistoryDialog debt={debt} />
                           {debt.status !== "paid" && (
                             <PayDebtDialog debt={debt} />

@@ -16,8 +16,15 @@ export async function GET(
 
   try {
     const { id } = await ctx.params;
+    const transactionId = parseInt(id, 10);
+    if (isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "Invalid transaction ID" },
+        { status: 400 }
+      );
+    }
     const transaction = await db.query.transactions.findFirst({
-      where: eq(transactions.id, id),
+      where: eq(transactions.id, transactionId),
       with: {
         transactionItems: {
           with: {
@@ -56,6 +63,13 @@ export async function PATCH(
 
   try {
     const { id } = await ctx.params;
+    const transactionId = parseInt(id, 10);
+    if (isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "Invalid transaction ID" },
+        { status: 400 }
+      );
+    }
     const body = await request.json();
     const { paymentStatus, paidAmount, notes, customerId } = body as Partial<{
       paymentStatus: string;
@@ -66,7 +80,7 @@ export async function PATCH(
 
     // Ambil transaksi saat ini untuk validasi
     const current = await db.query.transactions.findFirst({
-      where: eq(transactions.id, id),
+      where: eq(transactions.id, transactionId),
     });
     if (!current) {
       return NextResponse.json(
@@ -135,7 +149,7 @@ export async function PATCH(
     const updatedTransaction = await db
       .update(transactions)
       .set(updates as any)
-      .where(eq(transactions.id, id))
+      .where(eq(transactions.id, transactionId))
       .returning();
 
     if (!updatedTransaction.length) {
@@ -156,7 +170,7 @@ export async function PATCH(
         remaining <= 0 ? "paid" : paid > 0 ? "partial" : "unpaid";
 
       const existingDebt = await db.query.debts.findFirst({
-        where: eq(debts.transactionId, id),
+        where: eq(debts.transactionId, transactionId),
       });
 
       if (remaining > 0 && trx.customerId) {
@@ -219,9 +233,16 @@ export async function DELETE(
 
   try {
     const { id } = await ctx.params;
+    const transactionId = parseInt(id, 10);
+    if (isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "Invalid transaction ID" },
+        { status: 400 }
+      );
+    }
     const deletedTransaction = await db
       .delete(transactions)
-      .where(eq(transactions.id, id))
+      .where(eq(transactions.id, transactionId))
       .returning();
 
     if (!deletedTransaction.length) {

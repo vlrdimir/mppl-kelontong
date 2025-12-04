@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     const allTransactions = await db.query.transactions.findMany({
       where: whereClause,
       with: {
+        customer: true,
         transactionItems: {
           with: {
             product: true,

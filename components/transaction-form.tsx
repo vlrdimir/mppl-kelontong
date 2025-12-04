@@ -44,9 +44,9 @@ import type { Customer } from "@/lib/types";
 
 interface TransactionFormProps {
   products: {
-    id: string;
+    id: number;
     name: string;
-    category: string;
+    category?: { name: string } | null;
     stock: number;
     purchasePrice: string;
     sellingPrice: string;
@@ -56,7 +56,7 @@ interface TransactionFormProps {
 }
 
 export interface TransactionItem {
-  productId: string;
+  productId: number | "";
   quantity: number;
   price: number;
   productSearch: string;
@@ -71,7 +71,7 @@ export function TransactionForm({ products }: TransactionFormProps) {
   const [customerId, setCustomerId] = useState<string>("");
   const [items, setItems] = useState<TransactionItem[]>([
     {
-      productId: "",
+      productId: "" as const,
       quantity: 1,
       price: 0,
       productSearch: "",
@@ -95,7 +95,7 @@ export function TransactionForm({ products }: TransactionFormProps) {
     setItems([
       ...items,
       {
-        productId: "",
+        productId: "" as const,
         quantity: 1,
         price: 0,
         productSearch: "",
@@ -185,12 +185,14 @@ export function TransactionForm({ products }: TransactionFormProps) {
         paymentStatus,
         paidAmount: finalPaidAmount.toString(),
         notes: notes || undefined,
-        items: items.map((item) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price.toString(),
-          subtotal: (item.quantity * item.price).toString(),
-        })),
+        items: items
+          .filter((item) => item.productId !== "")
+          .map((item) => ({
+            productId: item.productId as number,
+            quantity: item.quantity,
+            price: item.price.toString(),
+            subtotal: (item.quantity * item.price).toString(),
+          })),
       },
       {
         onSuccess: () => {
@@ -199,7 +201,7 @@ export function TransactionForm({ products }: TransactionFormProps) {
           setCustomerId("");
           setItems([
             {
-              productId: "",
+              productId: "" as const,
               quantity: 1,
               price: 0,
               productSearch: "",
@@ -370,7 +372,10 @@ export function TransactionForm({ products }: TransactionFormProps) {
               type="submit"
               size="lg"
               disabled={
-                createTransaction.isPending || items.some((i) => !i.productId)
+                createTransaction.isPending ||
+                items.some(
+                  (i) => i.productId === "" || typeof i.productId !== "number"
+                )
               }
             >
               {createTransaction.isPending

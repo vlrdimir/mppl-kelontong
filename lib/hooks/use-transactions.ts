@@ -26,7 +26,7 @@ export function useCreateTransaction() {
       paidAmount?: string;
       notes?: string;
       items: Array<{
-        productId: string;
+        productId: number;
         quantity: number;
         price: string;
         subtotal: string;

@@ -9,6 +9,7 @@ import {
   Package,
   CreditCard,
   Users,
+  Tag,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -37,6 +38,11 @@ export function Navigation({ user }: { user: userProps }) {
       href: "/dashboard/products",
       label: "Produk",
       icon: Package,
+    },
+    {
+      href: "/dashboard/categories",
+      label: "Kategori",
+      icon: Tag,
     },
     {
       href: "/dashboard/customers",
