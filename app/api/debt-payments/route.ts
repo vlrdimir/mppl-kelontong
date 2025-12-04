@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { debtPayments, debts } from "@/lib/db/schema";
+import { debtPayments, debts, transactions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import auth from "@/proxy";
 
@@ -89,6 +89,17 @@ export async function POST(request: NextRequest) {
         })
         .where(eq(debts.id, debtId))
         .returning();
+
+      // 5) Sinkronisasi: Update transaction yang terkait
+      if (updatedDebt?.transactionId) {
+        await db
+          .update(transactions)
+          .set({
+            paidAmount: String(newPaidAmount),
+            paymentStatus: newStatus,
+          })
+          .where(eq(transactions.id, updatedDebt.transactionId));
+      }
 
       return NextResponse.json({ payment, debt: updatedDebt }, { status: 201 });
     } catch (updateError) {
