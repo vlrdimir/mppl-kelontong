@@ -82,8 +82,11 @@ export function useUpdateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      // Invalidate semua query debts termasuk yang spesifik (active, paid, dll)
       queryClient.invalidateQueries({ queryKey: ["debts"] });
       queryClient.invalidateQueries({ queryKey: ["debtStats"] });
+      // Invalidate debtPayments juga untuk memastikan riwayat pembayaran ter-update
+      queryClient.invalidateQueries({ queryKey: ["debtPayments"] });
     },
   });
 }

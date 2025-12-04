@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { transactions, debts } from "@/lib/db/schema";
+import { transactions, debts, debtPayments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import auth from "@/proxy";
 
@@ -172,6 +172,19 @@ export async function PATCH(
       const existingDebt = await db.query.debts.findFirst({
         where: eq(debts.transactionId, transactionId),
       });
+
+      // Reset debtPayments jika status transaksi berubah dari "paid" ke status lain
+      // Ini mencegah duplikasi riwayat pembayaran ketika admin mengubah status transaksi
+      if (
+        existingDebt &&
+        current.paymentStatus === "paid" &&
+        newStatus !== "paid"
+      ) {
+        // Hapus semua riwayat pembayaran yang terkait dengan debt ini
+        await db
+          .delete(debtPayments)
+          .where(eq(debtPayments.debtId, existingDebt.id));
+      }
 
       if (remaining > 0 && trx.customerId) {
         // Jika ada sisa piutang DAN pelanggan terhubung
