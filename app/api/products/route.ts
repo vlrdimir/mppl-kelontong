@@ -67,6 +67,13 @@ export async function POST(request: NextRequest) {
       sellingPrice: string;
     };
 
+    if (!categoryId) {
+      return NextResponse.json(
+        { error: "Kategori produk wajib diisi" },
+        { status: 400 }
+      );
+    }
+
     if (!name || name.trim() === "") {
       return NextResponse.json(
         { error: "Nama produk wajib diisi" },
