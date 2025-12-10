@@ -20,8 +20,11 @@ export function usePrintInvoice() {
     });
   };
 
-  const formatInvoiceNumber = (id: number) => {
-    const idString = String(id);
+  const formatInvoiceNumber = (invoiceCode: string | number) => {
+    if (typeof invoiceCode === "string" && invoiceCode.trim().length > 0) {
+      return invoiceCode;
+    }
+    const idString = String(invoiceCode);
     const padding = Math.max(4, idString.length);
     return `INV-${idString.padStart(padding, "0")}`;
   };
@@ -50,7 +53,9 @@ export function usePrintInvoice() {
       <html>
         <head>
           <meta charset="UTF-8">
-          <title>Invoice ${formatInvoiceNumber(transaction.id)}</title>
+          <title>Invoice ${formatInvoiceNumber(
+            transaction.invoiceCode ?? transaction.id
+          )}</title>
           <style>
             @page {
               margin: 1cm;
@@ -160,7 +165,9 @@ export function usePrintInvoice() {
             <div class="invoice-info">
               <div class="invoice-info-item">
                 <div class="invoice-info-label">Nomor Invoice:</div>
-                <div>${formatInvoiceNumber(transaction.id)}</div>
+                <div>${formatInvoiceNumber(
+                  transaction.invoiceCode ?? transaction.id
+                )}</div>
               </div>
               <div class="invoice-info-item">
                 <div class="invoice-info-label">Tanggal:</div>
@@ -174,8 +181,16 @@ export function usePrintInvoice() {
               <div class="invoice-info-item">
                 <div class="invoice-info-label">Pelanggan:</div>
                 <div>${transaction.customer.name}</div>
-                ${transaction.customer.phone ? `<div style="font-size: 0.9em; color: #666;">${transaction.customer.phone}</div>` : ""}
-                ${transaction.customer.address ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">${transaction.customer.address}</div>` : ""}
+                ${
+                  transaction.customer.phone
+                    ? `<div style="font-size: 0.9em; color: #666;">${transaction.customer.phone}</div>`
+                    : ""
+                }
+                ${
+                  transaction.customer.address
+                    ? `<div style="font-size: 0.9em; color: #666; margin-top: 5px;">${transaction.customer.address}</div>`
+                    : ""
+                }
               </div>
             </div>
             `

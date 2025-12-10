@@ -39,6 +39,7 @@ export interface TransactionItem {
 
 export interface Transaction {
   id: number;
+  invoiceCode: string;
   type: string;
   customerId: string | null;
   customer?: Customer | null;

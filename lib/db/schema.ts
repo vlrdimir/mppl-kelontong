@@ -8,6 +8,7 @@ import {
   timestamp,
   index,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -56,10 +57,17 @@ export const customers = pgTable("customers", {
 });
 
 // Transactions table
+export const invoiceSequences = pgTable("invoice_seq", {
+  period: text("period").primaryKey(),
+  lastSeq: integer("last_seq").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 export const transactions = pgTable(
   "transactions",
   {
     id: serial("id").primaryKey(),
+    invoiceCode: text("invoice_code").notNull(),
     type: text("type").notNull(), // 'sale' or 'purchase'
     customerId: uuid("customer_id").references(() => customers.id, {
       onDelete: "set null",
@@ -78,6 +86,7 @@ export const transactions = pgTable(
   (table) => [
     index("idx_transactions_date").on(table.transactionDate),
     index("idx_transactions_type").on(table.type),
+    uniqueIndex("transactions_invoice_code_unique").on(table.invoiceCode),
   ]
 );
 

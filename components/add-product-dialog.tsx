@@ -74,7 +74,7 @@ export function AddProductDialog() {
           console.error("Error adding product:", error);
           toast({
             title: "Gagal",
-            description: "Gagal menambahkan produk",
+            description: error.message || "Gagal menambahkan produk",
             type: "background",
           });
         },

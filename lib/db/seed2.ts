@@ -1,4 +1,10 @@
-import { products, customers, transactions, transactionItems } from "./schema";
+import {
+  products,
+  customers,
+  transactions,
+  transactionItems,
+  invoiceSequences,
+} from "./schema";
 import { eq, inArray } from "drizzle-orm";
 import { db } from ".";
 
@@ -53,6 +59,9 @@ async function seed() {
         `🗑️  Deleted ${saleTransactionIds.length} previous sale transactions`
       );
     }
+
+    // Reset invoice sequences before re-generating
+    await db.delete(invoiceSequences);
 
     console.log(
       "💳 Generating random sale transactions for the last 3 months..."
@@ -121,11 +130,36 @@ async function seed() {
 
     // Insert in sorted order
     const generatedTransactions = [];
+    const periodCounters = new Map<string, number>();
+    const formatDateStr = (date: Date) => {
+      const yy = String(date.getFullYear()).slice(-2);
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `2${yy}${month}${day}`; // contoh 2025-12-10 => 2251210
+    };
+    const getMonthPeriod = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      return `${year}${month}01`; // kunci periode bulanan
+    };
+    const nextInvoiceCode = (date: Date) => {
+      const period = getMonthPeriod(date); // reset bulanan
+      const current = periodCounters.get(period) ?? 0;
+      const next = current + 1;
+      periodCounters.set(period, next);
+      const dateStr = formatDateStr(date); // tanggal aktual untuk kode
+      return {
+        period,
+        code: `INV-${dateStr}-${String(next).padStart(5, "0")}`,
+      };
+    };
 
     for (const txData of transactionsToInsert) {
+      const { code: invoiceCode } = nextInvoiceCode(txData.transactionDate);
       const [newTransaction] = await db
         .insert(transactions)
         .values({
+          invoiceCode,
           type: "sale",
           customerId: txData.customer.id,
           totalAmount: txData.totalAmount.toFixed(2),
@@ -143,6 +177,15 @@ async function seed() {
       }
 
       generatedTransactions.push(newTransaction);
+    }
+
+    if (periodCounters.size > 0) {
+      await db.insert(invoiceSequences).values(
+        Array.from(periodCounters.entries()).map(([period, lastSeq]) => ({
+          period,
+          lastSeq,
+        }))
+      );
     }
 
     console.log(

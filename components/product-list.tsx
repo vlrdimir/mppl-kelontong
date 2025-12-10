@@ -95,7 +95,7 @@ export function ProductList({ products, pagination }: ProductListProps) {
                   <TableRow>
                     <TableHead>No</TableHead>
                     {/* remove name product temporarily */}
-                    {/* <TableHead>Nama Produk</TableHead> */}
+                    <TableHead>Nama Produk</TableHead>
                     <TableHead>Kategori</TableHead>
                     <TableHead>Stok</TableHead>
                     <TableHead>Harga Beli</TableHead>

@@ -9,6 +9,7 @@ import {
   transactionItems,
   debts,
   debtPayments,
+  invoiceSequences,
 } from "./schema";
 
 if (!process.env.DATABASE_URL) {
@@ -34,6 +35,7 @@ async function seed() {
     await db.delete(debts);
     await db.delete(transactionItems);
     await db.delete(transactions);
+    await db.delete(invoiceSequences);
     await db.delete(customers);
     await db.delete(products);
     await db.delete(categories);
@@ -538,15 +540,42 @@ async function seed() {
         b.transaction.transactionDate.getTime()
     );
 
+    const periodCounters = new Map<string, number>();
+    const formatDateStr = (date: Date) => {
+      const yy = String(date.getFullYear()).slice(-2);
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `2${yy}${month}${day}`; // contoh 2025-12-10 => 2251210
+    };
+    const getMonthPeriod = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      return `${year}${month}01`; // kunci periode bulanan
+    };
+    const nextInvoiceCode = (date: Date) => {
+      const period = getMonthPeriod(date); // reset bulanan
+      const current = periodCounters.get(period) ?? 0;
+      const next = current + 1;
+      periodCounters.set(period, next);
+      const dateStr = formatDateStr(date); // tampilkan tanggal aktual
+      return {
+        period,
+        code: `INV-${dateStr}-${String(next).padStart(5, "0")}`,
+      };
+    };
+
     // Insert transactions in chronological order
     const insertedTransactions = [];
     const insertedDebts = [];
 
     for (const txData of transactionsData) {
       // Insert transaction
+      const { code: invoiceCode } = nextInvoiceCode(
+        txData.transaction.transactionDate
+      );
       const [newTransaction] = await db
         .insert(transactions)
-        .values(txData.transaction)
+        .values({ invoiceCode, ...txData.transaction })
         .returning();
 
       // Insert transaction items
@@ -579,6 +608,15 @@ async function seed() {
       }
 
       insertedTransactions.push(newTransaction);
+    }
+
+    if (periodCounters.size > 0) {
+      await db.insert(invoiceSequences).values(
+        Array.from(periodCounters.entries()).map(([period, lastSeq]) => ({
+          period,
+          lastSeq,
+        }))
+      );
     }
 
     console.log(

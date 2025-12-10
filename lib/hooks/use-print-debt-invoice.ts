@@ -20,8 +20,11 @@ export function usePrintDebtInvoice() {
     });
   };
 
-  const formatInvoiceNumber = (id: number) => {
-    const idString = String(id);
+  const formatInvoiceNumber = (invoiceCode: string | number) => {
+    if (typeof invoiceCode === "string" && invoiceCode.trim().length > 0) {
+      return invoiceCode;
+    }
+    const idString = String(invoiceCode);
     const padding = Math.max(4, idString.length);
     return `INV-${idString.padStart(padding, "0")}`;
   };
@@ -37,7 +40,7 @@ export function usePrintDebtInvoice() {
         <head>
           <meta charset="UTF-8">
           <title>Bukti Pelunasan Piutang ${formatInvoiceNumber(
-            debt.transactionId
+            debt.transaction?.invoiceCode ?? debt.transactionId
           )}</title>
           <style>
             @page {
@@ -149,7 +152,9 @@ export function usePrintDebtInvoice() {
             <div class="invoice-info">
               <div class="invoice-info-item">
                 <div class="invoice-info-label">Nomor Invoice:</div>
-                <div>${formatInvoiceNumber(debt.transactionId)}</div>
+                <div>${formatInvoiceNumber(
+                  debt.transaction?.invoiceCode ?? debt.transactionId
+                )}</div>
               </div>
               <div class="invoice-info-item">
                 <div class="invoice-info-label">Tanggal Pelunasan:</div>

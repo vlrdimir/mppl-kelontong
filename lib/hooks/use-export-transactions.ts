@@ -36,8 +36,11 @@ export function useExportTransactions() {
     });
   };
 
-  const formatInvoiceNumber = (id: number): string => {
-    const idString = String(id);
+  const formatInvoiceNumber = (invoiceCode: string | number): string => {
+    if (typeof invoiceCode === "string" && invoiceCode.trim().length > 0) {
+      return invoiceCode;
+    }
+    const idString = String(invoiceCode);
     const padding = Math.max(4, idString.length);
     return `INV-${idString.padStart(padding, "0")}`;
   };
@@ -64,7 +67,9 @@ export function useExportTransactions() {
     const rows: ExportRow[] = [];
 
     transactions.forEach((transaction) => {
-      const invoiceNumber = formatInvoiceNumber(transaction.id);
+      const invoiceNumber = formatInvoiceNumber(
+        transaction.invoiceCode ?? transaction.id
+      );
       const tanggal = formatDate(transaction.transactionDate);
       const pelanggan = transaction.customer?.name || "-";
       const totalTransaksi = Number(transaction.totalAmount);

@@ -62,11 +62,12 @@ export function TransactionList({
     });
   };
 
-  const formatInvoiceNumber = (id: number) => {
-    // Padding dinamis: minimal 4 digit, menyesuaikan dengan jumlah digit ID
-    // Tidak ada batasan maksimal, format akan menyesuaikan otomatis
-    const idString = String(id);
-    const padding = Math.max(4, idString.length); // Minimal 4 digit, atau sesuai panjang ID
+  const formatInvoiceNumber = (invoiceCode: string | number) => {
+    if (typeof invoiceCode === "string" && invoiceCode.trim().length > 0) {
+      return invoiceCode;
+    }
+    const idString = String(invoiceCode);
+    const padding = Math.max(4, idString.length);
     return `INV-${idString.padStart(padding, "0")}`;
   };
 
@@ -123,7 +124,9 @@ export function TransactionList({
                   {transactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell className="font-semibold">
-                        {formatInvoiceNumber(transaction.id)}
+                        {formatInvoiceNumber(
+                          transaction.invoiceCode ?? transaction.id
+                        )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatDate(transaction.transactionDate)}

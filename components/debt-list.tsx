@@ -71,8 +71,11 @@ export function DebtList({
     });
   };
 
-  const formatInvoiceNumber = (id: number) => {
-    const idString = String(id);
+  const formatInvoiceNumber = (invoiceCode: string | number) => {
+    if (typeof invoiceCode === "string" && invoiceCode.trim().length > 0) {
+      return invoiceCode;
+    }
+    const idString = String(invoiceCode);
     const padding = Math.max(4, idString.length);
     return `INV-${idString.padStart(padding, "0")}`;
   };
@@ -129,7 +132,10 @@ export function DebtList({
                     <TableRow key={debt.id}>
                       <TableCell className="font-semibold">
                         {debt?.transactionId
-                          ? formatInvoiceNumber(debt.transactionId)
+                          ? formatInvoiceNumber(
+                              debt.transaction?.invoiceCode ??
+                                debt.transactionId
+                            )
                           : "-"}
                       </TableCell>
                       <TableCell className="font-medium">
