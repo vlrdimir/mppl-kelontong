@@ -46,7 +46,7 @@ export function ProductList({ products, pagination }: ProductListProps) {
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.category?.toLowerCase().includes(searchQuery.toLowerCase())
+      product.category?.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const formatCurrency = (amount: number) => {
@@ -93,6 +93,8 @@ export function ProductList({ products, pagination }: ProductListProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>No</TableHead>
+                    {/* remove name product temporarily */}
                     <TableHead>Nama Produk</TableHead>
                     <TableHead>Kategori</TableHead>
                     <TableHead>Stok</TableHead>
@@ -103,7 +105,7 @@ export function ProductList({ products, pagination }: ProductListProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.map((product) => {
+                  {filteredProducts.map((product, index) => {
                     const margin =
                       Number(product.sellingPrice) -
                       Number(product.purchasePrice);
@@ -112,10 +114,13 @@ export function ProductList({ products, pagination }: ProductListProps) {
 
                     return (
                       <TableRow key={product.id}>
+                        <TableCell className="font-semibold">
+                          {index + 1}
+                        </TableCell>
                         <TableCell className="font-medium">
                           {product.name}
                         </TableCell>
-                        <TableCell>{product.category || "-"}</TableCell>
+                        <TableCell>{product.category?.name || "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <span>{product.stock}</span>

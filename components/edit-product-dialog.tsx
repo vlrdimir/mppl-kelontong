@@ -15,7 +15,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUpdateProduct } from "@/lib/hooks/use-products";
+import { useCategories } from "@/lib/hooks/use-categories";
 import { useToast } from "@/hooks/use-toast";
 
 interface EditProductDialogProps {
@@ -24,10 +32,15 @@ interface EditProductDialogProps {
 
 export function EditProductDialog({ product }: EditProductDialogProps) {
   const { toast } = useToast();
+  const { data: categoriesData } = useCategories();
+  const categories = categoriesData || [];
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: product.name,
-    category: product.category || "",
+    categoryId:
+      product.categoryId?.toString() ||
+      product.category?.id?.toString() ||
+      "none",
     stock: product.stock.toString(),
     purchasePrice:
       product.purchasePrice?.toString() ||
@@ -49,7 +62,10 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
         id: product.id,
         data: {
           name: formData.name,
-          category: formData.category || undefined,
+          categoryId:
+            formData.categoryId && formData.categoryId !== "none"
+              ? Number.parseInt(formData.categoryId)
+              : undefined,
           stock: Number.parseInt(formData.stock),
           purchasePrice: formData.purchasePrice,
           sellingPrice: formData.sellingPrice,
@@ -101,14 +117,24 @@ export function EditProductDialog({ product }: EditProductDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-category">Kategori</Label>
-            <Input
-              id="edit-category"
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
+            <Label htmlFor="edit-categoryId">Kategori</Label>
+            <Select
+              value={formData.categoryId}
+              onValueChange={(value) =>
+                setFormData({ ...formData, categoryId: value })
               }
-            />
+            >
+              <SelectTrigger id="edit-categoryId">
+                <SelectValue placeholder="Pilih kategori (opsional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

@@ -3,10 +3,12 @@ import {
   uuid,
   text,
   integer,
+  serial,
   decimal,
   timestamp,
   index,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -20,11 +22,21 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });
 
+// Categories table
+export const categories = pgTable("categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 // Products table
 export const products = pgTable("products", {
-  id: uuid("id").primaryKey().defaultRandom(),
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  category: text("category"),
+  categoryId: integer("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
   stock: integer("stock").notNull().default(0),
   purchasePrice: decimal("purchase_price", {
     precision: 10,
@@ -45,10 +57,17 @@ export const customers = pgTable("customers", {
 });
 
 // Transactions table
+export const invoiceSequences = pgTable("invoice_seq", {
+  period: text("period").primaryKey(),
+  lastSeq: integer("last_seq").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
 export const transactions = pgTable(
   "transactions",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: serial("id").primaryKey(),
+    invoiceCode: text("invoice_code").notNull(),
     type: text("type").notNull(), // 'sale' or 'purchase'
     customerId: uuid("customer_id").references(() => customers.id, {
       onDelete: "set null",
@@ -67,6 +86,7 @@ export const transactions = pgTable(
   (table) => [
     index("idx_transactions_date").on(table.transactionDate),
     index("idx_transactions_type").on(table.type),
+    uniqueIndex("transactions_invoice_code_unique").on(table.invoiceCode),
   ]
 );
 
@@ -75,10 +95,10 @@ export const transactionItems = pgTable(
   "transaction_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    transactionId: uuid("transaction_id")
+    transactionId: integer("transaction_id")
       .notNull()
       .references(() => transactions.id, { onDelete: "cascade" }),
-    productId: uuid("product_id")
+    productId: integer("product_id")
       .notNull()
       .references(() => products.id, { onDelete: "restrict" }),
     quantity: integer("quantity").notNull(),
@@ -100,7 +120,7 @@ export const debts = pgTable(
     customerId: uuid("customer_id")
       .notNull()
       .references(() => customers.id, { onDelete: "cascade" }),
-    transactionId: uuid("transaction_id")
+    transactionId: integer("transaction_id")
       .notNull()
       .references(() => transactions.id, { onDelete: "cascade" }),
     totalDebt: decimal("total_debt", { precision: 10, scale: 2 }).notNull(),
@@ -134,6 +154,17 @@ export const debtPayments = pgTable("debt_payments", {
 });
 
 // Relations
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  products: many(products),
+}));
+
+export const productsRelations = relations(products, ({ one }) => ({
+  category: one(categories, {
+    fields: [products.categoryId],
+    references: [categories.id],
+  }),
+}));
+
 export const customersRelations = relations(customers, ({ many }) => ({
   transactions: many(transactions),
   debts: many(debts),

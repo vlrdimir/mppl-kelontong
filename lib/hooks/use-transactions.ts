@@ -26,7 +26,7 @@ export function useCreateTransaction() {
       paidAmount?: string;
       notes?: string;
       items: Array<{
-        productId: string;
+        productId: number;
         quantity: number;
         price: string;
         subtotal: string;
@@ -47,6 +47,10 @@ export function useCreateTransaction() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
+      queryClient.invalidateQueries({ queryKey: ["debtStats"] });
+      // Invalidate debtPayments untuk memastikan riwayat pembayaran ter-update
+      queryClient.invalidateQueries({ queryKey: ["debtPayments"] });
     },
   });
 }
@@ -80,8 +84,11 @@ export function useUpdateTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      // Invalidate semua query debts termasuk yang spesifik (active, paid, dll)
       queryClient.invalidateQueries({ queryKey: ["debts"] });
       queryClient.invalidateQueries({ queryKey: ["debtStats"] });
+      // Invalidate debtPayments juga untuk memastikan riwayat pembayaran ter-update
+      queryClient.invalidateQueries({ queryKey: ["debtPayments"] });
     },
   });
 }

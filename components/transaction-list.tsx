@@ -19,6 +19,9 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import { EditTransactionDialog } from "@/components/edit-transaction-dialog";
 import { usePaginationStore } from "@/lib/store/pagination-store";
+import { usePrintInvoice } from "@/lib/hooks/use-print-invoice";
+import { Printer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { Transaction, PaginationMeta } from "@/lib/types";
 
 interface TransactionListProps {
@@ -39,6 +42,7 @@ export function TransactionList({
   const setItemsPerPage = usePaginationStore(
     (state) => state.setTransactionListItemsPerPage
   );
+  const { printInvoice } = usePrintInvoice();
 
   const formatCurrency = (amount: string | number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -56,6 +60,15 @@ export function TransactionList({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatInvoiceNumber = (invoiceCode: string | number) => {
+    if (typeof invoiceCode === "string" && invoiceCode.trim().length > 0) {
+      return invoiceCode;
+    }
+    const idString = String(invoiceCode);
+    const padding = Math.max(4, idString.length);
+    return `INV-${idString.padStart(padding, "0")}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -97,6 +110,7 @@ export function TransactionList({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Invoice</TableHead>
                     <TableHead>Tanggal</TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Total</TableHead>
@@ -109,6 +123,11 @@ export function TransactionList({
                 <TableBody>
                   {transactions.map((transaction) => (
                     <TableRow key={transaction.id}>
+                      <TableCell className="font-semibold">
+                        {formatInvoiceNumber(
+                          transaction.invoiceCode ?? transaction.id
+                        )}
+                      </TableCell>
                       <TableCell className="whitespace-nowrap">
                         {formatDate(transaction.transactionDate)}
                       </TableCell>
@@ -134,7 +153,17 @@ export function TransactionList({
                         {transaction.notes || "-"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <EditTransactionDialog transaction={transaction} />
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => printInvoice(transaction)}
+                            title="Cetak Invoice"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
+                          <EditTransactionDialog transaction={transaction} />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

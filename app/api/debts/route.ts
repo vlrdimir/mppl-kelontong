@@ -33,6 +33,16 @@ export async function GET(request: NextRequest) {
     const debtsQuery = db.query.debts.findMany({
       with: {
         customer: true,
+        transaction: {
+          with: {
+            transactionItems: {
+              with: {
+                product: true,
+              },
+            },
+          },
+        },
+        debtPayments: true,
       },
       where: whereCondition,
       orderBy: [desc(debts.createdAt)],

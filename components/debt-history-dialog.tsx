@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,17 @@ interface DebtHistoryDialogProps {
 }
 
 function DebtHistoryContent({ debt }: { debt: Debt }) {
-  const { data: payments = [], isLoading, error } = useDebtPayments(debt.id);
+  const {
+    data: payments = [],
+    isLoading,
+    error,
+    refetch,
+  } = useDebtPayments(debt.id);
+
+  // Refetch ketika component mount untuk memastikan data fresh
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const formatCurrency = (amount: string | number) => {
     return new Intl.NumberFormat("id-ID", {

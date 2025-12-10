@@ -1,4 +1,12 @@
 CREATE TYPE "public"."role" AS ENUM('admin', 'user');--> statement-breakpoint
+CREATE TABLE "categories" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "categories_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
 CREATE TABLE "customers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
@@ -19,7 +27,7 @@ CREATE TABLE "debt_payments" (
 CREATE TABLE "debts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"customer_id" uuid NOT NULL,
-	"transaction_id" uuid NOT NULL,
+	"transaction_id" integer NOT NULL,
 	"total_debt" numeric(10, 2) NOT NULL,
 	"paid_amount" numeric(10, 2) DEFAULT '0',
 	"remaining_debt" numeric(10, 2) NOT NULL,
@@ -29,9 +37,9 @@ CREATE TABLE "debts" (
 );
 --> statement-breakpoint
 CREATE TABLE "products" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
-	"category" text,
+	"category_id" integer,
 	"stock" integer DEFAULT 0 NOT NULL,
 	"purchase_price" numeric(10, 2) NOT NULL,
 	"selling_price" numeric(10, 2) NOT NULL,
@@ -41,8 +49,8 @@ CREATE TABLE "products" (
 --> statement-breakpoint
 CREATE TABLE "transaction_items" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"transaction_id" uuid NOT NULL,
-	"product_id" uuid NOT NULL,
+	"transaction_id" integer NOT NULL,
+	"product_id" integer NOT NULL,
 	"quantity" integer NOT NULL,
 	"price" numeric(10, 2) NOT NULL,
 	"subtotal" numeric(10, 2) NOT NULL,
@@ -50,7 +58,7 @@ CREATE TABLE "transaction_items" (
 );
 --> statement-breakpoint
 CREATE TABLE "transactions" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"id" serial PRIMARY KEY NOT NULL,
 	"type" text NOT NULL,
 	"customer_id" uuid,
 	"total_amount" numeric(10, 2) NOT NULL,
@@ -65,7 +73,6 @@ CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
-	"password" text NOT NULL,
 	"role" "role" DEFAULT 'user' NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now()
 );
@@ -73,6 +80,7 @@ CREATE TABLE "users" (
 ALTER TABLE "debt_payments" ADD CONSTRAINT "debt_payments_debt_id_debts_id_fk" FOREIGN KEY ("debt_id") REFERENCES "public"."debts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "debts" ADD CONSTRAINT "debts_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "debts" ADD CONSTRAINT "debts_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_category_id_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."categories"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transaction_items" ADD CONSTRAINT "transaction_items_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transaction_items" ADD CONSTRAINT "transaction_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_customer_id_customers_id_fk" FOREIGN KEY ("customer_id") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { transactions, debts } from "@/lib/db/schema";
+import { transactions, debts, debtPayments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import auth from "@/proxy";
 
@@ -16,8 +16,15 @@ export async function GET(
 
   try {
     const { id } = await ctx.params;
+    const transactionId = parseInt(id, 10);
+    if (isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "Invalid transaction ID" },
+        { status: 400 }
+      );
+    }
     const transaction = await db.query.transactions.findFirst({
-      where: eq(transactions.id, id),
+      where: eq(transactions.id, transactionId),
       with: {
         transactionItems: {
           with: {
@@ -56,6 +63,13 @@ export async function PATCH(
 
   try {
     const { id } = await ctx.params;
+    const transactionId = parseInt(id, 10);
+    if (isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "Invalid transaction ID" },
+        { status: 400 }
+      );
+    }
     const body = await request.json();
     const { paymentStatus, paidAmount, notes, customerId } = body as Partial<{
       paymentStatus: string;
@@ -66,7 +80,7 @@ export async function PATCH(
 
     // Ambil transaksi saat ini untuk validasi
     const current = await db.query.transactions.findFirst({
-      where: eq(transactions.id, id),
+      where: eq(transactions.id, transactionId),
     });
     if (!current) {
       return NextResponse.json(
@@ -135,7 +149,7 @@ export async function PATCH(
     const updatedTransaction = await db
       .update(transactions)
       .set(updates as any)
-      .where(eq(transactions.id, id))
+      .where(eq(transactions.id, transactionId))
       .returning();
 
     if (!updatedTransaction.length) {
@@ -156,13 +170,42 @@ export async function PATCH(
         remaining <= 0 ? "paid" : paid > 0 ? "partial" : "unpaid";
 
       const existingDebt = await db.query.debts.findFirst({
-        where: eq(debts.transactionId, id),
+        where: eq(debts.transactionId, transactionId),
       });
+
+      // Hitung selisih pembayaran untuk membuat debt payment entry
+      const oldPaid = Number(current.paidAmount ?? 0);
+      const paymentDifference = paid - oldPaid;
+
+      // Reset debtPayments jika status transaksi berubah dari "paid" ke status lain
+      // Ini mencegah duplikasi riwayat pembayaran ketika admin mengubah status transaksi
+      if (
+        existingDebt &&
+        current.paymentStatus === "paid" &&
+        newStatus !== "paid"
+      ) {
+        // Hapus semua riwayat pembayaran yang terkait dengan debt ini
+        await db
+          .delete(debtPayments)
+          .where(eq(debtPayments.debtId, existingDebt.id));
+
+        // Buat entry pembayaran awal untuk jumlah yang sudah dibayar
+        if (paid > 0) {
+          await db.insert(debtPayments).values({
+            debtId: existingDebt.id,
+            amount: String(paid),
+            paymentDate: new Date(),
+            notes: "Pembayaran awal",
+          });
+        }
+      }
+
+      let finalDebt = existingDebt;
 
       if (remaining > 0 && trx.customerId) {
         // Jika ada sisa piutang DAN pelanggan terhubung
         if (existingDebt) {
-          await db
+          const [updatedDebt] = await db
             .update(debts)
             .set({
               customerId: trx.customerId, // Update customerId in debt
@@ -171,21 +214,27 @@ export async function PATCH(
               status: debtStatus,
               updatedAt: new Date(),
             })
-            .where(eq(debts.id, existingDebt.id));
+            .where(eq(debts.id, existingDebt.id))
+            .returning();
+          finalDebt = updatedDebt || existingDebt;
         } else {
-          await db.insert(debts).values({
-            customerId: trx.customerId,
-            transactionId: trx.id,
-            totalDebt: trx.totalAmount,
-            paidAmount: String(paid),
-            remainingDebt: String(remaining),
-            status: debtStatus,
-          });
+          const [newDebt] = await db
+            .insert(debts)
+            .values({
+              customerId: trx.customerId,
+              transactionId: trx.id,
+              totalDebt: trx.totalAmount,
+              paidAmount: String(paid),
+              remainingDebt: String(remaining),
+              status: debtStatus,
+            })
+            .returning();
+          finalDebt = newDebt;
         }
       } else if (existingDebt) {
         // Jika tidak ada sisa, tandai piutang lunas atau hapus
         // Dalam kasus ini, kita set lunas
-        await db
+        const [updatedDebt] = await db
           .update(debts)
           .set({
             paidAmount: String(paid),
@@ -193,7 +242,23 @@ export async function PATCH(
             status: "paid",
             updatedAt: new Date(),
           })
-          .where(eq(debts.id, existingDebt.id));
+          .where(eq(debts.id, existingDebt.id))
+          .returning();
+        finalDebt = updatedDebt || existingDebt;
+      }
+
+      // Buat debt payment entry jika ada peningkatan pembayaran dan status adalah partial atau paid
+      if (
+        finalDebt &&
+        paymentDifference > 0 &&
+        (debtStatus === "partial" || debtStatus === "paid")
+      ) {
+        await db.insert(debtPayments).values({
+          debtId: finalDebt.id,
+          amount: String(paymentDifference),
+          paymentDate: new Date(),
+          notes: notes || trx.notes || "-",
+        });
       }
     }
 
@@ -219,9 +284,16 @@ export async function DELETE(
 
   try {
     const { id } = await ctx.params;
+    const transactionId = parseInt(id, 10);
+    if (isNaN(transactionId)) {
+      return NextResponse.json(
+        { error: "Invalid transaction ID" },
+        { status: 400 }
+      );
+    }
     const deletedTransaction = await db
       .delete(transactions)
-      .where(eq(transactions.id, id))
+      .where(eq(transactions.id, transactionId))
       .returning();
 
     if (!deletedTransaction.length) {

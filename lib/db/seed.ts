@@ -1,179 +1,236 @@
-import { drizzle } from "drizzle-orm/neon-http"
-import { neon } from "@neondatabase/serverless"
-import * as schema from "./schema"
-import { products, customers, transactions, transactionItems, debts, debtPayments } from "./schema"
+import { drizzle } from "drizzle-orm/neon-http";
+import { neon } from "@neondatabase/serverless";
+import * as schema from "./schema";
+import {
+  categories,
+  products,
+  customers,
+  transactions,
+  transactionItems,
+  debts,
+  debtPayments,
+  invoiceSequences,
+} from "./schema";
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set")
+  throw new Error("DATABASE_URL is not set");
 }
 
-const sql = neon(process.env.DATABASE_URL)
-const db = drizzle(sql, { schema })
+const sql = neon(process.env.DATABASE_URL);
+const db = drizzle(sql, { schema });
 
 async function seed() {
-  console.log("🌱 Starting database seeding...")
+  console.log("🌱 Starting database seeding...");
+  console.log(
+    "📝 Note: products.id and transactions.id are now integers (serial)"
+  );
+  console.log(
+    "📝 Note: products now use categoryId (FK) instead of category (text)"
+  );
 
   try {
     // Clear existing data
-    console.log("🧹 Clearing existing data...")
-    await db.delete(debtPayments)
-    await db.delete(debts)
-    await db.delete(transactionItems)
-    await db.delete(transactions)
-    await db.delete(customers)
-    await db.delete(products)
+    console.log("🧹 Clearing existing data...");
+    await db.delete(debtPayments);
+    await db.delete(debts);
+    await db.delete(transactionItems);
+    await db.delete(transactions);
+    await db.delete(invoiceSequences);
+    await db.delete(customers);
+    await db.delete(products);
+    await db.delete(categories);
+
+    // Insert Categories first
+    console.log("🏷️  Inserting categories...");
+    const insertedCategories = await db
+      .insert(categories)
+      .values([
+        {
+          name: "Makanan",
+          description: "Produk makanan instan dan makanan ringan",
+        },
+        { name: "Minuman", description: "Minuman kemasan dan minuman ringan" },
+        { name: "Sembako", description: "Sembako dan bahan pokok" },
+        { name: "Susu", description: "Produk susu dan turunannya" },
+        {
+          name: "Perlengkapan Mandi",
+          description: "Produk kebersihan dan perawatan diri",
+        },
+        { name: "Rokok", description: "Produk rokok" },
+      ])
+      .returning();
+    console.log(`✅ Inserted ${insertedCategories.length} categories`);
+
+    // Create category mapping
+    const categoryMap: Record<string, number> = {};
+    categoryMap["Makanan"] = insertedCategories.find(
+      (c) => c.name === "Makanan"
+    )!.id;
+    categoryMap["Minuman"] = insertedCategories.find(
+      (c) => c.name === "Minuman"
+    )!.id;
+    categoryMap["Sembako"] = insertedCategories.find(
+      (c) => c.name === "Sembako"
+    )!.id;
+    categoryMap["Susu"] = insertedCategories.find((c) => c.name === "Susu")!.id;
+    categoryMap["Perlengkapan Mandi"] = insertedCategories.find(
+      (c) => c.name === "Perlengkapan Mandi"
+    )!.id;
+    categoryMap["Rokok"] = insertedCategories.find(
+      (c) => c.name === "Rokok"
+    )!.id;
 
     // Insert Products
-    console.log("📦 Inserting products...")
+    console.log("📦 Inserting products...");
     const insertedProducts = await db
       .insert(products)
       .values([
         {
           name: "Indomie Goreng",
-          category: "Makanan",
+          categoryId: categoryMap["Makanan"],
           stock: 100,
           purchasePrice: "2500",
           sellingPrice: "3000",
         },
         {
           name: "Indomie Soto",
-          category: "Makanan",
+          categoryId: categoryMap["Makanan"],
           stock: 80,
           purchasePrice: "2500",
           sellingPrice: "3000",
         },
         {
           name: "Pop Mie",
-          category: "Makanan",
+          categoryId: categoryMap["Makanan"],
           stock: 50,
           purchasePrice: "4000",
           sellingPrice: "5000",
         },
         {
           name: "Mie Sedaap Goreng",
-          category: "Makanan",
+          categoryId: categoryMap["Makanan"],
           stock: 60,
           purchasePrice: "2300",
           sellingPrice: "2800",
         },
         {
           name: "Teh Botol Sosro",
-          category: "Minuman",
+          categoryId: categoryMap["Minuman"],
           stock: 120,
           purchasePrice: "3500",
           sellingPrice: "4500",
         },
         {
           name: "Aqua 600ml",
-          category: "Minuman",
+          categoryId: categoryMap["Minuman"],
           stock: 150,
           purchasePrice: "2000",
           sellingPrice: "3000",
         },
         {
           name: "Coca Cola 330ml",
-          category: "Minuman",
+          categoryId: categoryMap["Minuman"],
           stock: 90,
           purchasePrice: "4000",
           sellingPrice: "5500",
         },
         {
           name: "Kopi Kapal Api",
-          category: "Minuman",
+          categoryId: categoryMap["Minuman"],
           stock: 200,
           purchasePrice: "800",
           sellingPrice: "1500",
         },
         {
           name: "Beras 5kg",
-          category: "Sembako",
+          categoryId: categoryMap["Sembako"],
           stock: 30,
           purchasePrice: "50000",
           sellingPrice: "60000",
         },
         {
           name: "Minyak Goreng 2L",
-          category: "Sembako",
+          categoryId: categoryMap["Sembako"],
           stock: 40,
           purchasePrice: "28000",
           sellingPrice: "32000",
         },
         {
           name: "Gula Pasir 1kg",
-          category: "Sembako",
+          categoryId: categoryMap["Sembako"],
           stock: 50,
           purchasePrice: "12000",
           sellingPrice: "15000",
         },
         {
           name: "Telur 1kg",
-          category: "Sembako",
+          categoryId: categoryMap["Sembako"],
           stock: 25,
           purchasePrice: "25000",
           sellingPrice: "30000",
         },
         {
           name: "Susu Dancow",
-          category: "Susu",
+          categoryId: categoryMap["Susu"],
           stock: 45,
           purchasePrice: "35000",
           sellingPrice: "40000",
         },
         {
           name: "Susu Indomilk",
-          category: "Susu",
+          categoryId: categoryMap["Susu"],
           stock: 60,
           purchasePrice: "8000",
           sellingPrice: "10000",
         },
         {
           name: "Sabun Mandi Lifebuoy",
-          category: "Toiletries",
+          categoryId: categoryMap["Perlengkapan Mandi"],
           stock: 70,
           purchasePrice: "3500",
           sellingPrice: "5000",
         },
         {
           name: "Shampo Pantene Sachet",
-          category: "Toiletries",
+          categoryId: categoryMap["Perlengkapan Mandi"],
           stock: 100,
           purchasePrice: "1000",
           sellingPrice: "1500",
         },
         {
           name: "Pasta Gigi Pepsodent",
-          category: "Toiletries",
+          categoryId: categoryMap["Perlengkapan Mandi"],
           stock: 55,
           purchasePrice: "8000",
           sellingPrice: "11000",
         },
         {
           name: "Tissue Paseo",
-          category: "Toiletries",
+          categoryId: categoryMap["Perlengkapan Mandi"],
           stock: 40,
           purchasePrice: "15000",
           sellingPrice: "18000",
         },
         {
           name: "Rokok Sampoerna Mild",
-          category: "Rokok",
+          categoryId: categoryMap["Rokok"],
           stock: 80,
           purchasePrice: "25000",
           sellingPrice: "28000",
         },
         {
           name: "Rokok Djarum Super",
-          category: "Rokok",
+          categoryId: categoryMap["Rokok"],
           stock: 75,
           purchasePrice: "23000",
           sellingPrice: "26000",
         },
       ])
-      .returning()
-    console.log(`✅ Inserted ${insertedProducts.length} products`)
+      .returning();
+    console.log(`✅ Inserted ${insertedProducts.length} products`);
 
     // Insert Customers
-    console.log("👥 Inserting customers...")
+    console.log("👥 Inserting customers...");
     const insertedCustomers = await db
       .insert(customers)
       .values([
@@ -218,324 +275,375 @@ async function seed() {
           address: "Jl. Veteran No. 67, Medan",
         },
       ])
-      .returning()
-    console.log(`✅ Inserted ${insertedCustomers.length} customers`)
+      .returning();
+    console.log(`✅ Inserted ${insertedCustomers.length} customers`);
 
     // Insert Transactions with Items
-    console.log("💳 Inserting transactions...")
+    console.log("💳 Inserting transactions...");
+    console.log(
+      "📅 Transactions will be inserted in chronological order (by date)"
+    );
 
-    // Transaction 1 - Fully Paid
-    const [transaction1] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[0].id,
-        totalAmount: "27000",
-        paymentStatus: "paid",
-        paidAmount: "27000",
-        notes: "Transaksi lunas",
-        transactionDate: new Date("2024-10-01"),
-      })
-      .returning()
-
-    await db.insert(transactionItems).values([
+    // Define all transactions with their data (sorted by date)
+    const transactionsData = [
       {
-        transactionId: transaction1.id,
-        productId: insertedProducts[0].id, // Indomie Goreng
-        quantity: 5,
-        price: "3000",
-        subtotal: "15000",
+        // Transaction 1 - Fully Paid (2024-10-01)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[0].id,
+          totalAmount: "27000",
+          paymentStatus: "paid" as const,
+          paidAmount: "27000",
+          notes: "Transaksi lunas",
+          transactionDate: new Date("2024-10-01"),
+        },
+        items: [
+          {
+            productId: insertedProducts[0].id, // Indomie Goreng
+            quantity: 5,
+            price: "3000",
+            subtotal: "15000",
+          },
+          {
+            productId: insertedProducts[4].id, // Teh Botol
+            quantity: 2,
+            price: "4500",
+            subtotal: "9000",
+          },
+          {
+            productId: insertedProducts[7].id, // Kopi
+            quantity: 2,
+            price: "1500",
+            subtotal: "3000",
+          },
+        ],
+        debt: null,
+        debtPayment: null,
       },
       {
-        transactionId: transaction1.id,
-        productId: insertedProducts[4].id, // Teh Botol
-        quantity: 2,
-        price: "4500",
-        subtotal: "9000",
+        // Transaction 2 - Unpaid (2024-10-05)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[1].id,
+          totalAmount: "95000",
+          paymentStatus: "unpaid" as const,
+          paidAmount: "0",
+          notes: "Belum bayar",
+          transactionDate: new Date("2024-10-05"),
+        },
+        items: [
+          {
+            productId: insertedProducts[8].id, // Beras
+            quantity: 1,
+            price: "60000",
+            subtotal: "60000",
+          },
+          {
+            productId: insertedProducts[9].id, // Minyak
+            quantity: 1,
+            price: "32000",
+            subtotal: "32000",
+          },
+          {
+            productId: insertedProducts[7].id, // Kopi
+            quantity: 2,
+            price: "1500",
+            subtotal: "3000",
+          },
+        ],
+        debt: {
+          customerId: insertedCustomers[1].id,
+          totalDebt: "95000",
+          paidAmount: "0",
+          remainingDebt: "95000",
+          status: "unpaid" as const,
+        },
+        debtPayment: null,
       },
       {
-        transactionId: transaction1.id,
-        productId: insertedProducts[7].id, // Kopi
-        quantity: 2,
-        price: "1500",
-        subtotal: "3000",
-      },
-    ])
-
-    // Transaction 2 - Unpaid (Has Debt)
-    const [transaction2] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[1].id,
-        totalAmount: "95000",
-        paymentStatus: "unpaid",
-        paidAmount: "0",
-        notes: "Belum bayar",
-        transactionDate: new Date("2024-10-05"),
-      })
-      .returning()
-
-    await db.insert(transactionItems).values([
-      {
-        transactionId: transaction2.id,
-        productId: insertedProducts[8].id, // Beras
-        quantity: 1,
-        price: "60000",
-        subtotal: "60000",
-      },
-      {
-        transactionId: transaction2.id,
-        productId: insertedProducts[9].id, // Minyak
-        quantity: 1,
-        price: "32000",
-        subtotal: "32000",
-      },
-      {
-        transactionId: transaction2.id,
-        productId: insertedProducts[7].id, // Kopi
-        quantity: 2,
-        price: "1500",
-        subtotal: "3000",
-      },
-    ])
-
-    // Create debt for transaction 2
-    const [debt1] = await db
-      .insert(debts)
-      .values({
-        customerId: insertedCustomers[1].id,
-        transactionId: transaction2.id,
-        totalDebt: "95000",
-        paidAmount: "0",
-        remainingDebt: "95000",
-        status: "unpaid",
-      })
-      .returning()
-
-    // Transaction 3 - Partial Payment (Has Debt)
-    const [transaction3] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[2].id,
-        totalAmount: "150000",
-        paymentStatus: "partial",
-        paidAmount: "50000",
-        notes: "Bayar sebagian",
-        transactionDate: new Date("2024-10-10"),
-      })
-      .returning()
-
-    await db.insert(transactionItems).values([
-      {
-        transactionId: transaction3.id,
-        productId: insertedProducts[8].id, // Beras
-        quantity: 2,
-        price: "60000",
-        subtotal: "120000",
+        // Transaction 3 - Partial Payment (2024-10-10)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[2].id,
+          totalAmount: "150000",
+          paymentStatus: "partial" as const,
+          paidAmount: "50000",
+          notes: "Bayar sebagian",
+          transactionDate: new Date("2024-10-10"),
+        },
+        items: [
+          {
+            productId: insertedProducts[8].id, // Beras
+            quantity: 2,
+            price: "60000",
+            subtotal: "120000",
+          },
+          {
+            productId: insertedProducts[11].id, // Telur
+            quantity: 1,
+            price: "30000",
+            subtotal: "30000",
+          },
+        ],
+        debt: {
+          customerId: insertedCustomers[2].id,
+          totalDebt: "150000",
+          paidAmount: "50000",
+          remainingDebt: "100000",
+          status: "partial" as const,
+        },
+        debtPayment: {
+          amount: "50000",
+          paymentDate: new Date("2024-10-10"),
+          notes: "Pembayaran pertama",
+        },
       },
       {
-        transactionId: transaction3.id,
-        productId: insertedProducts[11].id, // Telur
-        quantity: 1,
-        price: "30000",
-        subtotal: "30000",
-      },
-    ])
-
-    // Create debt for transaction 3
-    const [debt2] = await db
-      .insert(debts)
-      .values({
-        customerId: insertedCustomers[2].id,
-        transactionId: transaction3.id,
-        totalDebt: "150000",
-        paidAmount: "50000",
-        remainingDebt: "100000",
-        status: "partial",
-      })
-      .returning()
-
-    // Add debt payment
-    await db.insert(debtPayments).values({
-      debtId: debt2.id,
-      amount: "50000",
-      paymentDate: new Date("2024-10-10"),
-      notes: "Pembayaran pertama",
-    })
-
-    // Transaction 4 - Paid
-    const [transaction4] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[3].id,
-        totalAmount: "33000",
-        paymentStatus: "paid",
-        paidAmount: "33000",
-        transactionDate: new Date("2024-10-15"),
-      })
-      .returning()
-
-    await db.insert(transactionItems).values([
-      {
-        transactionId: transaction4.id,
-        productId: insertedProducts[6].id, // Coca Cola
-        quantity: 3,
-        price: "5500",
-        subtotal: "16500",
+        // Transaction 4 - Paid (2024-10-15)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[3].id,
+          totalAmount: "33000",
+          paymentStatus: "paid" as const,
+          paidAmount: "33000",
+          transactionDate: new Date("2024-10-15"),
+        },
+        items: [
+          {
+            productId: insertedProducts[6].id, // Coca Cola
+            quantity: 3,
+            price: "5500",
+            subtotal: "16500",
+          },
+          {
+            productId: insertedProducts[5].id, // Aqua
+            quantity: 5,
+            price: "3000",
+            subtotal: "15000",
+          },
+          {
+            productId: insertedProducts[7].id, // Kopi
+            quantity: 1,
+            price: "1500",
+            subtotal: "1500",
+          },
+        ],
+        debt: null,
+        debtPayment: null,
       },
       {
-        transactionId: transaction4.id,
-        productId: insertedProducts[5].id, // Aqua
-        quantity: 5,
-        price: "3000",
-        subtotal: "15000",
+        // Transaction 5 - Unpaid (2024-10-20)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[4].id,
+          totalAmount: "78000",
+          paymentStatus: "unpaid" as const,
+          paidAmount: "0",
+          notes: "Hutang",
+          transactionDate: new Date("2024-10-20"),
+        },
+        items: [
+          {
+            productId: insertedProducts[18].id, // Rokok Sampoerna
+            quantity: 2,
+            price: "28000",
+            subtotal: "56000",
+          },
+          {
+            productId: insertedProducts[4].id, // Teh Botol
+            quantity: 4,
+            price: "4500",
+            subtotal: "18000",
+          },
+          {
+            productId: insertedProducts[0].id, // Indomie
+            quantity: 2,
+            price: "3000",
+            subtotal: "6000",
+          },
+        ],
+        debt: {
+          customerId: insertedCustomers[4].id,
+          totalDebt: "78000",
+          paidAmount: "0",
+          remainingDebt: "78000",
+          status: "unpaid" as const,
+        },
+        debtPayment: null,
       },
       {
-        transactionId: transaction4.id,
-        productId: insertedProducts[7].id, // Kopi
-        quantity: 1,
-        price: "1500",
-        subtotal: "1500",
-      },
-    ])
-
-    // Transaction 5 - Unpaid (Has Debt)
-    const [transaction5] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[4].id,
-        totalAmount: "78000",
-        paymentStatus: "unpaid",
-        paidAmount: "0",
-        notes: "Hutang",
-        transactionDate: new Date("2024-10-20"),
-      })
-      .returning()
-
-    await db.insert(transactionItems).values([
-      {
-        transactionId: transaction5.id,
-        productId: insertedProducts[18].id, // Rokok Sampoerna
-        quantity: 2,
-        price: "28000",
-        subtotal: "56000",
+        // Transaction 6 - Paid (2024-10-25)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[5].id,
+          totalAmount: "62000",
+          paymentStatus: "paid" as const,
+          paidAmount: "62000",
+          transactionDate: new Date("2024-10-25"),
+        },
+        items: [
+          {
+            productId: insertedProducts[12].id, // Susu Dancow
+            quantity: 1,
+            price: "40000",
+            subtotal: "40000",
+          },
+          {
+            productId: insertedProducts[16].id, // Pasta Gigi
+            quantity: 2,
+            price: "11000",
+            subtotal: "22000",
+          },
+        ],
+        debt: null,
+        debtPayment: null,
       },
       {
-        transactionId: transaction5.id,
-        productId: insertedProducts[4].id, // Teh Botol
-        quantity: 4,
-        price: "4500",
-        subtotal: "18000",
+        // Transaction 7 - Recent Paid (2024-10-28)
+        transaction: {
+          type: "sale" as const,
+          customerId: insertedCustomers[6].id,
+          totalAmount: "45500",
+          paymentStatus: "paid" as const,
+          paidAmount: "45500",
+          transactionDate: new Date("2024-10-28"),
+        },
+        items: [
+          {
+            productId: insertedProducts[2].id, // Pop Mie
+            quantity: 5,
+            price: "5000",
+            subtotal: "25000",
+          },
+          {
+            productId: insertedProducts[13].id, // Susu Indomilk
+            quantity: 2,
+            price: "10000",
+            subtotal: "20000",
+          },
+          {
+            productId: insertedProducts[15].id, // Shampo
+            quantity: 3,
+            price: "1500",
+            subtotal: "4500",
+          },
+        ],
+        debt: null,
+        debtPayment: null,
       },
-      {
-        transactionId: transaction5.id,
-        productId: insertedProducts[0].id, // Indomie
-        quantity: 2,
-        price: "3000",
-        subtotal: "6000",
-      },
-    ])
+    ];
 
-    // Create debt for transaction 5
-    await db
-      .insert(debts)
-      .values({
-        customerId: insertedCustomers[4].id,
-        transactionId: transaction5.id,
-        totalDebt: "78000",
-        paidAmount: "0",
-        remainingDebt: "78000",
-        status: "unpaid",
-      })
-      .returning()
+    // Sort transactions by date (oldest first) to ensure ID serial is sequential
+    transactionsData.sort(
+      (a, b) =>
+        a.transaction.transactionDate.getTime() -
+        b.transaction.transactionDate.getTime()
+    );
 
-    // Transaction 6 - Paid
-    const [transaction6] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[5].id,
-        totalAmount: "62000",
-        paymentStatus: "paid",
-        paidAmount: "62000",
-        transactionDate: new Date("2024-10-25"),
-      })
-      .returning()
+    const periodCounters = new Map<string, number>();
+    const formatDateStr = (date: Date) => {
+      const yy = String(date.getFullYear()).slice(-2);
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `2${yy}${month}${day}`; // contoh 2025-12-10 => 2251210
+    };
+    const getMonthPeriod = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      return `${year}${month}01`; // kunci periode bulanan
+    };
+    const nextInvoiceCode = (date: Date) => {
+      const period = getMonthPeriod(date); // reset bulanan
+      const current = periodCounters.get(period) ?? 0;
+      const next = current + 1;
+      periodCounters.set(period, next);
+      const dateStr = formatDateStr(date); // tampilkan tanggal aktual
+      return {
+        period,
+        code: `INV-${dateStr}-${String(next).padStart(5, "0")}`,
+      };
+    };
 
-    await db.insert(transactionItems).values([
-      {
-        transactionId: transaction6.id,
-        productId: insertedProducts[12].id, // Susu Dancow
-        quantity: 1,
-        price: "40000",
-        subtotal: "40000",
-      },
-      {
-        transactionId: transaction6.id,
-        productId: insertedProducts[16].id, // Pasta Gigi
-        quantity: 2,
-        price: "11000",
-        subtotal: "22000",
-      },
-    ])
+    // Insert transactions in chronological order
+    const insertedTransactions = [];
+    const insertedDebts = [];
 
-    // Transaction 7 - Recent Paid
-    const [transaction7] = await db
-      .insert(transactions)
-      .values({
-        type: "sale",
-        customerId: insertedCustomers[6].id,
-        totalAmount: "45500",
-        paymentStatus: "paid",
-        paidAmount: "45500",
-        transactionDate: new Date("2024-10-28"),
-      })
-      .returning()
+    for (const txData of transactionsData) {
+      // Insert transaction
+      const { code: invoiceCode } = nextInvoiceCode(
+        txData.transaction.transactionDate
+      );
+      const [newTransaction] = await db
+        .insert(transactions)
+        .values({ invoiceCode, ...txData.transaction })
+        .returning();
 
-    await db.insert(transactionItems).values([
-      {
-        transactionId: transaction7.id,
-        productId: insertedProducts[2].id, // Pop Mie
-        quantity: 5,
-        price: "5000",
-        subtotal: "25000",
-      },
-      {
-        transactionId: transaction7.id,
-        productId: insertedProducts[13].id, // Susu Indomilk
-        quantity: 2,
-        price: "10000",
-        subtotal: "20000",
-      },
-      {
-        transactionId: transaction7.id,
-        productId: insertedProducts[15].id, // Shampo
-        quantity: 3,
-        price: "1500",
-        subtotal: "4500",
-      },
-    ])
+      // Insert transaction items
+      await db.insert(transactionItems).values(
+        txData.items.map((item) => ({
+          ...item,
+          transactionId: newTransaction.id,
+        }))
+      );
 
-    console.log("✅ Inserted 7 transactions with items")
-    console.log("✅ Inserted 3 debts with payment history")
+      // Insert debt if exists
+      if (txData.debt) {
+        const [newDebt] = await db
+          .insert(debts)
+          .values({
+            ...txData.debt,
+            transactionId: newTransaction.id,
+          })
+          .returning();
 
-    console.log("✨ Database seeding completed successfully!")
+        // Insert debt payment if exists
+        if (txData.debtPayment) {
+          await db.insert(debtPayments).values({
+            ...txData.debtPayment,
+            debtId: newDebt.id,
+          });
+        }
+
+        insertedDebts.push(newDebt);
+      }
+
+      insertedTransactions.push(newTransaction);
+    }
+
+    if (periodCounters.size > 0) {
+      await db.insert(invoiceSequences).values(
+        Array.from(periodCounters.entries()).map(([period, lastSeq]) => ({
+          period,
+          lastSeq,
+        }))
+      );
+    }
+
+    console.log(
+      `✅ Inserted ${insertedTransactions.length} transactions with items (in chronological order)`
+    );
+    console.log(
+      `✅ Inserted ${insertedDebts.length} debts with payment history`
+    );
+    console.log(
+      `📊 Transaction IDs are now sequential: ${insertedTransactions
+        .map((t) => t.id)
+        .join(", ")}`
+    );
+
+    console.log("✨ Database seeding completed successfully!");
   } catch (error) {
-    console.error("❌ Error seeding database:", error)
-    throw error
+    console.error("❌ Error seeding database:", error);
+    throw error;
   }
 }
 
 seed()
   .then(() => {
-    console.log("👋 Seeding process finished")
-    process.exit(0)
+    console.log("👋 Seeding process finished");
+    process.exit(0);
   })
   .catch((error) => {
-    console.error("💥 Seeding failed:", error)
-    process.exit(1)
-  })
+    console.error("💥 Seeding failed:", error);
+    process.exit(1);
+  });

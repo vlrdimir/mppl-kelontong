@@ -4,10 +4,27 @@ import {
   transactions,
   transactionItems,
   debts,
+  debtPayments,
   products,
+  invoiceSequences,
 } from "@/lib/db/schema";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, count, sql } from "drizzle-orm";
 import auth from "@/proxy";
+
+const formatDateStr = (date: Date) => {
+  const yy = String(date.getFullYear()).slice(-2);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  // Format khusus: 2 + YYMMDD, contoh 2025-12-10 => 2251210
+  return `2${yy}${month}${day}`;
+};
+
+// Periode bulanan (YYYYMM01) dipakai sebagai kunci reset sequence
+const getMonthPeriod = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}${month}01`;
+};
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -36,6 +53,7 @@ export async function GET(request: NextRequest) {
     const allTransactions = await db.query.transactions.findMany({
       where: whereClause,
       with: {
+        customer: true,
         transactionItems: {
           with: {
             product: true,
@@ -190,9 +208,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 1) Ambil nomor invoice bulanan (reset tiap awal bulan) dengan padding 5 digit
+    const now = new Date();
+    const period = getMonthPeriod(now); // contoh: 20251201 untuk Des 2025
+    const dateStr = formatDateStr(now); // tanggal aktual untuk ditampilkan
+
+    const [seq] = await db
+      .insert(invoiceSequences)
+      .values({ period, lastSeq: 1 })
+      .onConflictDoUpdate({
+        target: invoiceSequences.period,
+        set: { lastSeq: sql`${invoiceSequences.lastSeq} + 1` },
+      })
+      .returning({ lastSeq: invoiceSequences.lastSeq });
+
+    const invoiceCode = `INV-${dateStr}-${String(seq.lastSeq).padStart(
+      5,
+      "0"
+    )}`;
+
     const [transaction] = await db
       .insert(transactions)
       .values({
+        invoiceCode,
         type,
         customerId,
         totalAmount,
@@ -248,14 +286,31 @@ export async function POST(request: NextRequest) {
       if (remaining > 0 || debtStatus === "paid") {
         // Jika remaining > 0 buat piutang; jika paid, kita tidak buat piutang, namun pola ini menjaga konsistensi jika UI ingin menampilkan status
         if (remaining > 0) {
-          await db.insert(debts).values({
-            customerId: transaction.customerId!,
-            transactionId: transaction.id,
-            totalDebt: transaction.totalAmount,
-            paidAmount: transaction.paidAmount ?? "0",
-            remainingDebt: String(remaining),
-            status: debtStatus,
-          });
+          const [newDebt] = await db
+            .insert(debts)
+            .values({
+              customerId: transaction.customerId!,
+              transactionId: transaction.id,
+              totalDebt: transaction.totalAmount,
+              paidAmount: transaction.paidAmount ?? "0",
+              remainingDebt: String(remaining),
+              status: debtStatus,
+            })
+            .returning();
+
+          // Jika status adalah partial atau paid dan ada pembayaran, buat debt payment entry
+          if (
+            newDebt &&
+            (debtStatus === "partial" || debtStatus === "paid") &&
+            paid > 0
+          ) {
+            await db.insert(debtPayments).values({
+              debtId: newDebt.id,
+              amount: String(paid),
+              paymentDate: transaction.transactionDate || new Date(),
+              notes: transaction.notes || "-",
+            });
+          }
         }
       }
     } catch (itemsError) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, ilike, and, ne } from "drizzle-orm";
 import auth from "@/proxy";
 
 export async function GET(
@@ -15,8 +15,18 @@ export async function GET(
   }
   try {
     const { id } = await ctx.params;
+    const productId = parseInt(id, 10);
+    if (isNaN(productId)) {
+      return NextResponse.json(
+        { error: "Invalid product ID" },
+        { status: 400 }
+      );
+    }
     const product = await db.query.products.findFirst({
-      where: eq(products.id, id),
+      where: eq(products.id, productId),
+      with: {
+        category: true,
+      },
     });
 
     if (!product) {
@@ -45,41 +55,78 @@ export async function PATCH(
 
   try {
     const { id } = await ctx.params;
+    const productId = parseInt(id, 10);
+    if (isNaN(productId)) {
+      return NextResponse.json(
+        { error: "Invalid product ID" },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
-    const { name, category, stock, purchasePrice, sellingPrice } =
+    const { name, categoryId, stock, purchasePrice, sellingPrice } =
       body as Partial<{
         name: string;
-        category: string;
+        categoryId: number;
         stock: number;
         purchasePrice: string;
         sellingPrice: string;
       }>;
 
+    // Check if product exists
+    const existingProduct = await db.query.products.findFirst({
+      where: eq(products.id, productId),
+    });
+
+    if (!existingProduct) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    // Validasi duplicate name jika name diupdate (exclude current product)
+    if (name && name.trim() !== "") {
+      const duplicateProduct = await db.query.products.findFirst({
+        where: (products, { and, ne }) =>
+          and(ilike(products.name, name.trim()), ne(products.id, productId)),
+      });
+
+      if (duplicateProduct) {
+        return NextResponse.json(
+          { error: `Produk "${name}" sudah ada` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Hanya set field yang didefinisikan agar PATCH benar-benar partial update
     const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (typeof name !== "undefined") updates.name = name;
-    if (typeof category !== "undefined") updates.category = category;
+    if (typeof name !== "undefined") updates.name = name.trim();
+    if (typeof categoryId !== "undefined")
+      updates.categoryId = categoryId || null;
     if (typeof stock !== "undefined") updates.stock = stock;
     if (typeof purchasePrice !== "undefined")
       updates.purchasePrice = purchasePrice;
     if (typeof sellingPrice !== "undefined")
       updates.sellingPrice = sellingPrice;
 
-    if (Object.keys(updates).length === 1) {
-      // Tidak ada field yang diupdate selain updatedAt → tetap lanjut agar menyentuh updatedAt
-    }
-
     const updatedProduct = await db
       .update(products)
       .set(updates as any)
-      .where(eq(products.id, id))
+      .where(eq(products.id, productId))
       .returning();
+
+    // Fetch with category relation
+    const productWithCategory = await db.query.products.findFirst({
+      where: eq(products.id, productId),
+      with: {
+        category: true,
+      },
+    });
 
     if (!updatedProduct.length) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updatedProduct[0]);
+    return NextResponse.json(productWithCategory);
   } catch (error) {
     console.error("Error updating product:", error);
     return NextResponse.json(
@@ -101,9 +148,16 @@ export async function DELETE(
 
   try {
     const { id } = await ctx.params;
+    const productId = parseInt(id, 10);
+    if (isNaN(productId)) {
+      return NextResponse.json(
+        { error: "Invalid product ID" },
+        { status: 400 }
+      );
+    }
     const deletedProduct = await db
       .delete(products)
-      .where(eq(products.id, id))
+      .where(eq(products.id, productId))
       .returning();
 
     if (!deletedProduct.length) {

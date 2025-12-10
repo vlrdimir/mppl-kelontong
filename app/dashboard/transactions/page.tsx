@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { TransactionForm } from "@/components/transaction-form";
 import { TransactionList } from "@/components/transaction-list";
+import { ExportTransactionsButton } from "@/components/export-transactions-button";
 import { usePaginationStore } from "@/lib/store/pagination-store";
 import type {
   PaginatedProductsResponse,
@@ -79,13 +80,16 @@ export default function TransactionsPageClient() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b bg-background">
         <div className="container mx-auto px-4 py-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Transaksi Penjualan
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Catat transaksi penjualan barang
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Transaksi Penjualan
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Catat transaksi penjualan barang
+              </p>
+            </div>
+            <ExportTransactionsButton />
           </div>
         </div>
       </header>

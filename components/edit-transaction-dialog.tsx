@@ -86,7 +86,7 @@ export function EditTransactionDialog({
 
     updateTransaction.mutate(
       {
-        id: transaction.id,
+        id: String(transaction.id),
         data: {
           paymentStatus: formData.paymentStatus,
           paidAmount: formData.paidAmount,
