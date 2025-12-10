@@ -58,11 +58,9 @@ export function CategoryList({ categories }: CategoryListProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((category) => (
+                {categories.map((category, index) => (
                   <TableRow key={category.id}>
-                    <TableCell className="font-semibold">
-                      {category.id}
-                    </TableCell>
+                    <TableCell className="font-semibold">{index + 1}</TableCell>
                     <TableCell className="font-medium">
                       {category.name}
                     </TableCell>
